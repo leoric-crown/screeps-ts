@@ -1,7 +1,7 @@
 import { CreepRole, CreepType } from "../../types/Creeps";
+import { BaseCreepStates, CreepState, StateCode } from "../../types/CreepState";
 import ExtendedRoom from "../../extend/ExtendedRoom";
 import ExtendedCreep from "../../extend/ExtendedCreep";
-import { BaseCreepStates, CreepState, StateCode } from "../../types/CreepState";
 
 export interface HarvesterRoleStates extends BaseCreepStates{
   harvest: CreepState;

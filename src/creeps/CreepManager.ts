@@ -1,9 +1,9 @@
-import ExtendedRoom from "../extend/ExtendedRoom";
-import ExtendedCreep from "../extend/ExtendedCreep";
 import { CreepState } from "../types/CreepState";
 import { CreepsList, ExtendedCreepsList } from "../types/CreepsList";
 import { CreepRole, CreepType } from "../types/Creeps";
-import { HarvesterCreep, UpgraderCreep} from './classes/'
+import ExtendedRoom from "../extend/ExtendedRoom";
+import ExtendedCreep from "../extend/ExtendedCreep";
+import { HarvesterCreep, UpgraderCreep } from "./classes/";
 
 const getCreepForRole = (creep: Creep, type: CreepType, role: CreepRole) => {
   switch (role) {
@@ -29,7 +29,11 @@ class CreepManager {
     this.room = room;
     const creepList = {} as ExtendedCreepsList;
     _.forEach(creeps, creep => {
-      creepList[creep.name] = getCreepForRole(creep, creep.memory.type, creep.memory.role)
+      creepList[creep.name] = getCreepForRole(
+        creep,
+        creep.memory.type,
+        creep.memory.role
+      );
     });
     this.creeps = creepList;
 

@@ -1,5 +1,3 @@
-/** @format */
-
 type LoadableStructure =
   | StructureSpawn
   | StructureTower

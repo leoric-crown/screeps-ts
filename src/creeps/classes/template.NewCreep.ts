@@ -1,4 +1,4 @@
-import { CreepRole, CreepType } from "../../types/Creeps";
+// import { CreepRole, CreepType } from "../../types/Creeps";
 import ExtendedRoom from "../../extend/ExtendedRoom";
 import ExtendedCreep from "../../extend/ExtendedCreep";
 import { BaseCreepStates, CreepState, StateCode } from "../../types/CreepState";
@@ -24,6 +24,7 @@ class NewCreep extends ExtendedCreep {
       }
     };
     // IMPORTANT: Remember to add any necessary types and roles to CreepType and CreepRole in /src/types/
+    // @ts-ignore
     super(creep, CreepType.UPGRADER, CreepRole.UPGRADER, states);
   }
 }

@@ -1,5 +1,5 @@
-import { CreepConfig } from "./creeps/creeps.config";
 import { ExtendedCreepsList } from "./types/CreepsList";
+import { CreepConfig } from "./creeps/creeps.config";
 import ExtendedRoom from "./extend/ExtendedRoom";
 import ExtendedCreep from "./extend/ExtendedCreep";
 

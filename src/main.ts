@@ -1,8 +1,8 @@
+import { CreepRole, CreepType } from "./types/Creeps";
 import { ErrorMapper } from "utils/ErrorMapper";
 import ExtendedRoom from "./extend/ExtendedRoom";
 import spawner from "./spawner";
 import creepConfigs from "./creeps/creeps.config";
-import { CreepRole, CreepType } from "./types/Creeps";
 import CreepManager from "./creeps/CreepManager";
 
 declare global {
@@ -18,12 +18,6 @@ declare global {
   interface Memory {
     uuid: number;
     log: any;
-  }
-
-  enum Roles {
-    HARVESTER = "harvester",
-    UPGRADER = "upgrader",
-    BUILDER = "builder"
   }
 
   interface CreepMemory {
