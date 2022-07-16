@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "module": "esnext",
-    "lib": ["es2018"],
+    "lib": [
+      "es2018"
+    ],
     "target": "es2018",
     "moduleResolution": "Node",
     "outDir": "dist",
@@ -14,6 +16,7 @@
     "allowUnreachableCode": false
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "./src/creeps/classes/template.NewCreep.ts"
   ]
 }
