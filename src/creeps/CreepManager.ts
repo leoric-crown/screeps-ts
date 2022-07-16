@@ -2,8 +2,7 @@ import ExtendedRoom from "../extend/ExtendedRoom";
 import ExtendedCreep from "../extend/ExtendedCreep";
 import { CreepState } from "../types/CreepState";
 import { CreepsList, ExtendedCreepsList } from "../types/CreepsList";
-import { CreepType } from "../types/CreepType";
-import { CreepRole } from "types/CreepRole";
+import { CreepRole, CreepType } from "../types/Creeps";
 import { HarvesterCreep, UpgraderCreep} from './classes/'
 
 const getCreepForRole = (creep: Creep, type: CreepType, role: CreepRole) => {

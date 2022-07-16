@@ -1,6 +1,5 @@
-import { CreepRole } from "../types/CreepRole";
-import { CreepType } from "../types/CreepType";
-import { CreepRoleStates } from "../types/CreepRoleStates";
+import { CreepRole, CreepType } from "../types/Creeps";
+import { CreepRoleStates } from "creeps/classes";
 
 export class ExtendedCreep extends Creep {
   type: CreepType;

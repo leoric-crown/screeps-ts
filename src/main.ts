@@ -2,8 +2,7 @@ import { ErrorMapper } from "utils/ErrorMapper";
 import ExtendedRoom from "./extend/ExtendedRoom";
 import spawner from "./spawner";
 import creepConfigs from "./creeps/creeps.config";
-import { CreepRole } from "./types/CreepRole";
-import { CreepType } from "types/CreepType";
+import { CreepRole, CreepType } from "./types/Creeps";
 import CreepManager from "./creeps/CreepManager";
 
 declare global {
@@ -35,7 +34,7 @@ declare global {
     working?: boolean;
   }
 
-  // Syntax for adding proprties to `global` (ex "global.log")
+  // Syntax for adding properties to `global` (ex "global.log")
   namespace NodeJS {
     interface Global {
       log: any;

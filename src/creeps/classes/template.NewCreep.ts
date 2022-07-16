@@ -1,10 +1,9 @@
-import { CreepRole } from "../../types/CreepRole";
-import { CreepType } from "../../types/CreepType";
+import { CreepRole, CreepType } from "../../types/Creeps";
 import ExtendedRoom from "../../extend/ExtendedRoom";
 import ExtendedCreep from "../../extend/ExtendedCreep";
 import { BaseCreepStates, CreepState, StateCode } from "../../types/CreepState";
 
-// IMPORTANT: Remember to add this interface to CreepRoleStates in /src/types/
+// IMPORTANT: Remember to add this interface to CreepRoleStates in index.ts
 export interface NewCreepStates extends BaseCreepStates {
   newstate: CreepState;
 }

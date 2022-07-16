@@ -1,5 +1,4 @@
-import { CreepType } from "../types/CreepType";
-import { CreepRole } from "../types/CreepRole";
+import { CreepRole, CreepType } from "../types/Creeps";
 
 export type CreepConfig = {
   creepType: CreepType;
