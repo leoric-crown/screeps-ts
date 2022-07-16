@@ -95,7 +95,7 @@ class CreepManager {
   }
 }
 const setMemory = (creep: ExtendedCreep) => {
-  !creep.memory.state && (creep.memory.state = creep.states.harvest.code);
+  !creep.memory.state && (creep.memory.state = creep.states.init.code);
 
   return creep;
 };

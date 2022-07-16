@@ -2,15 +2,21 @@ import { CreepRole } from "../../types/CreepRole";
 import { CreepType } from "../../types/CreepType";
 import ExtendedRoom from "../../extend/ExtendedRoom";
 import ExtendedCreep from "../../extend/ExtendedCreep";
-import { CreepState, StateCode } from "../../types/CreepState";
+import { BaseCreepStates, CreepState, StateCode } from "../../types/CreepState";
 
 // IMPORTANT: Remember to add this interface to CreepRoleStates in /src/types/
-export interface NewCreepStates {
+export interface NewCreepStates extends BaseCreepStates {
   newstate: CreepState;
 }
 class NewCreep extends ExtendedCreep {
   constructor(creep: Creep) {
     const states: NewCreepStates = {
+      init: {
+        code: StateCode.INIT,
+        run: () => {},
+        //@ts-ignore - removes red squiggly line under .state - get rid of this when implementing
+        transition: () => this.memory.state = (this.states as NewCreepStates).newstate.code,
+      },
       newstate: {
         // IMPORTANT: Remember to add codes for new StateCodes to CreepState in /src/types/
         code: StateCode.UPGRADING,

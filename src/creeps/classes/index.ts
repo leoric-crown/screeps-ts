@@ -1,4 +1,5 @@
 import HarvesterCreep from "./HarvesterCreep";
 import UpgraderCreep from "./UpgraderCreep";
+import BuilderCreep from "./BuilderCreep";
 
-export { HarvesterCreep, UpgraderCreep }
+export { HarvesterCreep, UpgraderCreep, BuilderCreep };

@@ -2,16 +2,21 @@ import { CreepRole } from "../../types/CreepRole";
 import { CreepType } from "../../types/CreepType";
 import ExtendedRoom from "../../extend/ExtendedRoom";
 import ExtendedCreep from "../../extend/ExtendedCreep";
-import { CreepState, StateCode } from "../../types/CreepState";
+import { BaseCreepStates, CreepState, StateCode } from "../../types/CreepState";
 
-export interface HarvesterRoleStates {
+export interface HarvesterRoleStates extends BaseCreepStates{
   harvest: CreepState;
   load: CreepState;
 }
 
 class HarvesterCreep extends ExtendedCreep {
   constructor(creep: Creep) {
-    const states = {
+    const states: HarvesterRoleStates = {
+      init: {
+        code: StateCode.INIT,
+        run: () => {},
+        transition: () => this.memory.state = (this.states as HarvesterRoleStates).harvest.code,
+      },
       harvest: {
         code: StateCode.HARVESTING,
         run: (room: ExtendedRoom) => {
