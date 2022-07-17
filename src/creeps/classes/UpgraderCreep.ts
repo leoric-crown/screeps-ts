@@ -10,10 +10,13 @@ export interface UpgraderRoleStates extends BaseCreepStates {
 
 class UpgraderCreep extends ExtendedCreep {
   constructor(creep: Creep) {
-    const states: UpgraderRoleStates = {
+    super(creep);
+    this.type = CreepType.UPGRADER;
+    this.role = CreepRole.UPGRADER;
+    this.states = {
       init: {
         code: StateCode.INIT,
-        run: () => {},
+        run: () => {console.log("UPGRADER HAS BEEN INITED")},
         transition: () => this.memory.state = (this.states as UpgraderRoleStates).harvest.code,
       },
       harvest: {
@@ -50,7 +53,6 @@ class UpgraderCreep extends ExtendedCreep {
         }
       }
     };
-    super(creep, CreepType.UPGRADER, CreepRole.UPGRADER, states);
   }
 }
 

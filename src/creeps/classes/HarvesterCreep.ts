@@ -10,10 +10,13 @@ export interface HarvesterRoleStates extends BaseCreepStates{
 
 class HarvesterCreep extends ExtendedCreep {
   constructor(creep: Creep) {
-    const states: HarvesterRoleStates = {
+    super(creep);
+    this.type = CreepType.HARVESTER;
+    this.role = CreepRole.HARVESTER;
+    this.states = {
       init: {
         code: StateCode.INIT,
-        run: () => {},
+        run: () => { console.log('HARVESTER HAS BEEN INITED')},
         transition: () => this.memory.state = (this.states as HarvesterRoleStates).harvest.code,
       },
       harvest: {
@@ -43,16 +46,15 @@ class HarvesterCreep extends ExtendedCreep {
         },
         transition: (room: ExtendedRoom) => {
           if (this.store.energy === 0 || room.loadables[0] === undefined) {
-            this.memory.state = (this.states as HarvesterRoleStates).harvest.code;
             if (this.store.getFreeCapacity() === 0) {
               this.drop(RESOURCE_ENERGY); // if all energy storage is full, drop on floor and keep gathering
             }
+            this.memory.state = (this.states as HarvesterRoleStates).harvest.code;
             this.say("harvest");
           }
         }
       }
     };
-    super(creep, CreepType.HARVESTER, CreepRole.HARVESTER, states);
   }
 }
 

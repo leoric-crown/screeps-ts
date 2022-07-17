@@ -6,12 +6,17 @@ type LoadableStructure =
   | StructureStorage;
 
 class ExtendedRoom extends Room {
+  spawns: StructureSpawn[];
   sources: Source[];
   buildables: ConstructionSite[];
   loadables: LoadableStructure[];
 
+
   constructor(room: Room) {
     super(room.name);
+    this.energyAvailable = room.energyAvailable
+    this.energyCapacityAvailable = room.energyCapacityAvailable
+    this.spawns = room.find(FIND_MY_SPAWNS)
     this.sources = room.find(FIND_SOURCES);
     this.controller = room.controller || undefined;
     this.buildables = room.find(FIND_CONSTRUCTION_SITES);

@@ -44,6 +44,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
   );
 
   const room = new ExtendedRoom(Game.rooms["W8N6"]);
+  console.log(`room energy available: ${room.energyAvailable}/${room.energyCapacityAvailable}`);
   const spawn = Game.spawns["Spawn1"];
   Memory.log = { ...Memory.log, room };
 

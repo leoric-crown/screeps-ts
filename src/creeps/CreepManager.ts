@@ -3,7 +3,7 @@ import { CreepsList, ExtendedCreepsList } from "../types/CreepsList";
 import { CreepRole, CreepType } from "../types/Creeps";
 import ExtendedRoom from "../extend/ExtendedRoom";
 import ExtendedCreep from "../extend/ExtendedCreep";
-import { HarvesterCreep, UpgraderCreep } from "./classes/";
+import { BuilderCreep, HarvesterCreep, UpgraderCreep, AllStates } from "./classes/";
 
 const getCreepForRole = (creep: Creep, type: CreepType, role: CreepRole) => {
   switch (role) {
@@ -11,6 +11,8 @@ const getCreepForRole = (creep: Creep, type: CreepType, role: CreepRole) => {
       return new HarvesterCreep(creep);
     case CreepRole.UPGRADER:
       return new UpgraderCreep(creep);
+    case CreepRole.BUILDER:
+      return new BuilderCreep(creep);
     default:
       throw new Error(
         `There was an error getting ExtendedCreep for: type: ${type}, role: ${role}`
@@ -56,7 +58,8 @@ class CreepManager {
       const currentStatus = _.reduce(
         creeps,
         (memo, creep) => {
-          for (let [state, handler] of Object.entries(creep.states)) {
+          for (let [state, handler] of Object.entries(creep.states as any)) {
+            if (!memo[state]) memo[state] = 0;
             if ((handler as any).code === creep.memory.state) {
               memo[state] = (memo[state] || 0) + 1;
               total++;
@@ -66,19 +69,16 @@ class CreepManager {
         },
         {} as any
       );
-      console.log(
-        `in manage ${creepType || "ALL CREEPS"}, Room: ${this.room} - ${JSON.stringify(
-          currentStatus
-        )}`
-      );
+      console.log(`CreepManager: ${this.room} - ${JSON.stringify(currentStatus)}`);
       for (let [state, count] of Object.entries(currentStatus)) {
         console.log(
-          `module ${creepType || "ALL CREEPS"}, Room: ${
-            this.room
-          } - ${state}ing: ${count}`.replace("upgrade", "upgrad")
+          `CreepManager: ${this.room} - ${state}ing: ${count}`.replace(
+            "upgrade",
+            "upgrad"
+          )
         );
       }
-      console.log(`module ${creepType || "ALL CREEPS"} - total: ${total}`);
+      console.log(`CreepManager: Total Creeps: ${total}`);
 
       this.runCreeps();
     };
@@ -98,7 +98,8 @@ class CreepManager {
   }
 }
 const setMemory = (creep: ExtendedCreep) => {
-  !creep.memory.state && (creep.memory.state = creep.states.init.code);
+  !Object(creep.memory).hasOwnProperty("state") &&
+    (creep.memory.state = creep.states?.init.code);
 
   return creep;
 };

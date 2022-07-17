@@ -5,7 +5,8 @@ export enum StateCode {
   HARVESTING = 0,
   LOADING = 1,
   UPGRADING = 2,
-  BUILDING = 3
+  BUILDING = 3,
+  LOADSELF = 4
 }
 
 export interface BaseCreepStates {

@@ -21,7 +21,7 @@ const spawner = (
     ).length;
     if (
       creepCounts[conf.creepType] < conf.total &&
-      room.energyAvailable === room.energyCapacityAvailable
+      room.energyAvailable > 300
     ) {
       const bodyAbb = {
         move: "M",
@@ -35,10 +35,12 @@ const spawner = (
         // TOUGH: "T",
         // CLAIM: "C"
       };
-      const creepName = `${conf.bodies.map(body => bodyAbb[body]).join("")} - ${
+      const creepName = `${conf.bodies.map(body => bodyAbb[body]).join("")}-${
         Game.time
       }`;
-      console.log(`module spawner - spawning: ${creepName} with role: ${conf.role}`);
+      console.log(
+        `module spawner - spawning: ${creepName} with type: ${conf.creepType} and role: ${conf.role}`
+      );
       spawn.spawnCreep(conf.bodies, creepName, {
         memory: {
           type: conf.creepType,
