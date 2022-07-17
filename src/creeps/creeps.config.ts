@@ -17,8 +17,8 @@ const creepConfigs: CreepConfig[] = [
   {
     creepType: CreepType.UPGRADER,
     role: CreepRole.UPGRADER,
-    total: 2,
-    bodies: [WORK, WORK, CARRY, MOVE]
+    total: 3,
+    bodies: [WORK, WORK, WORK, CARRY, CARRY, MOVE]
   },
   {
     creepType: CreepType.BUILDER,

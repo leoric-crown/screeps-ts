@@ -10,12 +10,15 @@ class ExtendedRoom extends Room {
   sources: Source[];
   buildables: ConstructionSite[];
   loadables: LoadableStructure[];
+  extensions: StructureExtension[];
+  minAvailableEnergy: number;
 
 
   constructor(room: Room) {
     super(room.name);
     this.energyAvailable = room.energyAvailable
     this.energyCapacityAvailable = room.energyCapacityAvailable
+    this.minAvailableEnergy = 450;
     this.spawns = room.find(FIND_MY_SPAWNS)
     this.sources = room.find(FIND_SOURCES);
     this.controller = room.controller || undefined;
@@ -25,6 +28,13 @@ class ExtendedRoom extends Room {
         return isLoadable(structure);
       }
     });
+    this.extensions = room.find(FIND_MY_STRUCTURES, {
+      filter: (structure: AnyStructure) => {
+        if (structure.structureType === 'extension') {
+          return structure.store.getUsedCapacity(RESOURCE_ENERGY) >= 50
+        } else return false
+      }
+    })
   }
 }
 

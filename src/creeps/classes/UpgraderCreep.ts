@@ -6,6 +6,7 @@ import ExtendedCreep from "../../extend/ExtendedCreep";
 export interface UpgraderRoleStates extends BaseCreepStates {
   harvest: CreepState;
   upgrade: CreepState;
+  loadSelf: CreepState;
 }
 
 class UpgraderCreep extends ExtendedCreep {
@@ -16,39 +17,43 @@ class UpgraderCreep extends ExtendedCreep {
     this.states = {
       init: {
         code: StateCode.INIT,
-        run: () => {console.log("UPGRADER HAS BEEN INITED")},
-        transition: () => this.memory.state = (this.states as UpgraderRoleStates).harvest.code,
+        run: () => {},
+        transition: (room: ExtendedRoom) => {
+          if (room.energyAvailable > room.minAvailableEnergy) {
+            this.updateStateCode(StateCode.LOADSELF, "loadself");
+          } else {
+            this.updateStateCode(StateCode.HARVEST, "harvest");
+          }
+        }
       },
       harvest: {
-        code: StateCode.HARVESTING,
-        run: (room: ExtendedRoom) => {
-          if (this.harvest(room.sources[0]) == ERR_NOT_IN_RANGE) {
-            this.moveTo(room.sources[0], {
-              visualizePathStyle: { stroke: "#ffffff" }
-            });
-          }
-        },
+        code: StateCode.HARVEST,
+        run: this.harvestProc,
         transition: (room: ExtendedRoom) => {
           if (this.store.getFreeCapacity() === 0) {
-            this.memory.state = (this.states as UpgraderRoleStates).upgrade.code;
-            this.say("upgrade");
+            this.updateStateCode(StateCode.UPGRADE, "upgrade");
           }
         }
       },
       upgrade: {
-        code: StateCode.UPGRADING,
-        run: (room: ExtendedRoom) => {
-          if (
-            room.controller &&
-            this.upgradeController(room.controller) === ERR_NOT_IN_RANGE
-          ) {
-            this.moveTo(room.controller);
-          }
-        },
+        code: StateCode.UPGRADE,
+        run: this.upgradeProc,
         transition: (room: ExtendedRoom) => {
-          if (this.store.energy === 0 || room.controller === undefined) {
-            this.memory.state = (this.states as UpgraderRoleStates).harvest.code;
-            this.say("harvest");
+          if (this.store.energy === 0) {
+            if (room.energyAvailable > room.minAvailableEnergy) {
+              this.updateStateCode(StateCode.LOADSELF, "loadSelf");
+            } else {
+              this.updateStateCode(StateCode.HARVEST, "harvest");
+            }
+          }
+        }
+      },
+      loadSelf: {
+        code: StateCode.LOADSELF,
+        run: this.loadSelfProc,
+        transition: (room: ExtendedRoom) => {
+          if (this.store.getFreeCapacity() === 0) {
+            this.updateStateCode(StateCode.UPGRADE, "upgrade");
           }
         }
       }

@@ -8,29 +8,27 @@ export interface BuilderRoleStates extends BaseCreepStates {
   harvest: CreepState;
   load: CreepState;
   loadSelf: CreepState;
+  upgrade: CreepState;
 }
-const minRoomEnergy = 350;
+
 class BuilderCreep extends ExtendedCreep {
   constructor(creep: Creep) {
     super(creep);
     this.type = CreepType.BUILDER;
     this.role = CreepRole.BUILDER;
+
     this.states = {
       init: {
         code: StateCode.INIT,
-        run: () => {
-          console.log('BUILDER HAS BEEN INITED')
-        },
+        run: () => {},
         transition: (room: ExtendedRoom) => {
           if (
             room.buildables.length > 0 &&
             room.energyAvailable >= this.store.getCapacity()
           ) {
-            this.memory.state = (this.states as BuilderRoleStates).loadSelf.code;
-            this.say("loadSelf in");
+            this.updateStateCode(StateCode.LOADSELF, "loadSelf in");
           } else {
-            this.memory.state = (this.states as BuilderRoleStates).harvest.code;
-            this.say("harvest in");
+            this.updateStateCode(StateCode.HARVEST, "harvest in");
           }
         }
       },
@@ -39,61 +37,67 @@ class BuilderCreep extends ExtendedCreep {
         run: this.loadSelfProc,
         transition: (room: ExtendedRoom) => {
           if (this.store.getFreeCapacity() === 0) {
-            this.memory.state = (this.states as BuilderRoleStates).build.code;
-            this.say("build ls");
+            if (room.buildables.length > 0) {
+              this.updateStateCode(StateCode.BUILD, "build ls");
+            } else {
+              this.updateStateCode(StateCode.UPGRADE, "upgrade ls");
+            }
           }
         }
       },
       build: {
-        code: StateCode.BUILDING,
-        run: (room: ExtendedRoom) => {
-          if (room.buildables.length > 0) {
-            const tryBuild = this.build(room.buildables[0]);
-            if (tryBuild === ERR_NOT_IN_RANGE) {
-              this.moveTo(room.buildables[0], {
-                visualizePathStyle: { stroke: "#ffffff" }
-              });
-            }
-          }
-        },
+        code: StateCode.BUILD,
+        run: this.buildProc,
         transition: (room: ExtendedRoom) => {
-          if (this.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
-            if (room.buildables.length === 0 || room.energyAvailable < minRoomEnergy) {
-              this.memory.state = (this.states as BuilderRoleStates).harvest.code;
-              this.say("harvest bd");
-            } else {
-              this.memory.state = (this.states as BuilderRoleStates).loadSelf.code;
-              this.say("loadSelf bd");
-            }
+          if (this.store.energy === 0 || room.buildables.length === 0) {
+            this.updateStateCode(StateCode.LOADSELF, "loadSelf");
+          } else if (room.energyAvailable < room.minAvailableEnergy) {
+            this.updateStateCode(StateCode.HARVEST, "harvest");
           }
         }
       },
       harvest: {
-        code: StateCode.HARVESTING,
+        code: StateCode.HARVEST,
         run: this.harvestProc,
         transition: (room: ExtendedRoom) => {
           if (this.store.getUsedCapacity(RESOURCE_ENERGY) === this.store.getCapacity()) {
             if (room.buildables.length > 0) {
-              this.memory.state = (this.states as BuilderRoleStates).build.code;
-              this.say("build hv");
+              this.updateStateCode(StateCode.BUILD, "build hv");
+            } else if (room.energyAvailable < room.minAvailableEnergy) {
+              this.updateStateCode(StateCode.LOAD, "load hv");
             } else {
-              this.memory.state = (this.states as BuilderRoleStates).load.code;
-              this.say("load hv");
+              this.updateStateCode(StateCode.UPGRADE, "upgrade hv");
+            }
+          }
+        }
+      },
+      upgrade: {
+        code: StateCode.UPGRADE,
+        run: this.upgradeProc,
+        transition: (room: ExtendedRoom) => {
+          if (!room.controller) {
+            this.updateStateCode(StateCode.INIT, "reset");
+          } else if (this.store.energy === 0) {
+            if (room.energyAvailable < room.minAvailableEnergy) {
+              this.updateStateCode(StateCode.HARVEST, "harvest");
+            } else {
+              this.updateStateCode(StateCode.LOADSELF, "loadSelf");
             }
           }
         }
       },
       load: {
-        code: StateCode.LOADING,
+        code: StateCode.LOAD,
         run: this.loadProc,
         transition: (room: ExtendedRoom) => {
           if (this.store.energy === 0) {
-            if (room.buildables.length > 0 && room.energyAvailable > minRoomEnergy) {
-              this.memory.state = (this.states as BuilderRoleStates).loadSelf.code;
-              this.say("loadSelf ld");
+            if (
+              room.buildables.length > 0 &&
+              room.energyAvailable > room.minAvailableEnergy
+            ) {
+              this.updateStateCode(StateCode.LOADSELF, "loadSelf ld");
             } else {
-              this.memory.state = (this.states as BuilderRoleStates).harvest.code;
-              this.say("harvest ld");
+              this.updateStateCode(StateCode.HARVEST, "harvest ld");
             }
           }
         }

@@ -7,6 +7,4 @@ export type CreepRoleStates =
   | UpgraderRoleStates
   | BuilderRoleStates;
 
-export interface AllStates extends HarvesterRoleStates, UpgraderRoleStates, BuilderRoleStates {}
-
 export { HarvesterCreep, UpgraderCreep, BuilderCreep };

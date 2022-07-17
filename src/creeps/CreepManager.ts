@@ -3,7 +3,7 @@ import { CreepsList, ExtendedCreepsList } from "../types/CreepsList";
 import { CreepRole, CreepType } from "../types/Creeps";
 import ExtendedRoom from "../extend/ExtendedRoom";
 import ExtendedCreep from "../extend/ExtendedCreep";
-import { BuilderCreep, HarvesterCreep, UpgraderCreep, AllStates } from "./classes/";
+import { BuilderCreep, HarvesterCreep, UpgraderCreep } from "./classes/";
 
 const getCreepForRole = (creep: Creep, type: CreepType, role: CreepRole) => {
   switch (role) {
