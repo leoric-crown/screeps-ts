@@ -15,15 +15,15 @@ const creepConfigs: CreepConfig[] = [
     bodies: [WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE]
   },
   {
-    creepType: CreepType.UPGRADER,
-    role: CreepRole.UPGRADER,
-    total: 3,
-    bodies: [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE]
-  },
-  {
     creepType: CreepType.BUILDER,
     role: CreepRole.BUILDER,
     total: 1,
+    bodies: [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE]
+  },
+  {
+    creepType: CreepType.UPGRADER,
+    role: CreepRole.UPGRADER,
+    total: 3,
     bodies: [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE]
   }
 ];

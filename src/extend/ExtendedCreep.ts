@@ -11,6 +11,7 @@ export class ExtendedCreep extends Creep {
   public set type(value: CreepType | undefined) {
     this._type = value;
   }
+
   private _role?: CreepRole | undefined;
   public get role(): CreepRole | undefined {
     return this._role;
@@ -18,6 +19,7 @@ export class ExtendedCreep extends Creep {
   public set role(value: CreepRole | undefined) {
     this._role = value;
   }
+
   private _states?: CreepRoleStates | undefined;
   public get states(): CreepRoleStates | undefined {
     return this._states;
