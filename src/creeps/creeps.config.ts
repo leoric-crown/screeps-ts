@@ -11,20 +11,20 @@ const creepConfigs: CreepConfig[] = [
   {
     creepType: CreepType.HARVESTER,
     role: CreepRole.HARVESTER,
-    total: 4,
-    bodies: [WORK, WORK, CARRY, CARRY, MOVE]
+    total: 2,
+    bodies: [WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE]
   },
   {
     creepType: CreepType.UPGRADER,
     role: CreepRole.UPGRADER,
     total: 3,
-    bodies: [WORK, WORK, WORK, CARRY, CARRY, MOVE]
+    bodies: [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE]
   },
   {
     creepType: CreepType.BUILDER,
     role: CreepRole.BUILDER,
-    total: 2,
-    bodies: [WORK, WORK, CARRY, CARRY, MOVE]
+    total: 1,
+    bodies: [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE]
   }
 ];
 
