@@ -45,11 +45,11 @@ export const loop = ErrorMapper.wrapLoop(() => {
 
   const room = new ExtendedRoom(Game.rooms["W8N6"]);
   console.log(`room energy available: ${room.energyAvailable}/${room.energyCapacityAvailable}`);
-  const spawn = Game.spawns["Spawn1"];
   Memory.log = { ...Memory.log, room };
 
   const manager = new CreepManager(Game.creeps, room);
-  spawner(manager.get(), room, spawn, creepConfigs);
+  const creeps = manager.get();
+  spawner(creeps, room, room.spawns[0], creepConfigs);
 
   // Run all creeps in the room
   manager.run();
