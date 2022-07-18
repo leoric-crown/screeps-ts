@@ -49,10 +49,14 @@ class BuilderCreep extends ExtendedCreep {
         code: StateCode.BUILD,
         run: this.buildProc,
         transition: (room: ExtendedRoom) => {
-          if (this.store.energy === 0 || room.buildables.length === 0) {
-            this.updateStateCode(StateCode.LOADSELF, "loadSelf");
-          } else if (room.energyAvailable < room.minAvailableEnergy) {
-            this.updateStateCode(StateCode.HARVEST, "harvest");
+          if (this.store.energy === 0) {
+            if (room.buildables.length === 0) {
+              this.updateStateCode(StateCode.LOAD, "load");
+            } else if (room.energyAvailable < room.minAvailableEnergy) {
+              this.updateStateCode(StateCode.HARVEST, "harvest");
+            } else {
+              this.updateStateCode(StateCode.LOADSELF, "loadSelf");
+            }
           }
         }
       },
