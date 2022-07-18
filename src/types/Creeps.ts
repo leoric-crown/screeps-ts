@@ -7,11 +7,13 @@ export type CreepBodyAbbreviations = {
 export enum CreepType {
   HARVESTER = "harvester",
   BUILDER = "builder",
-  UPGRADER = "upgrader"
+  UPGRADER = "upgrader",
+  HAULER = "hauler"
 }
 
 export enum CreepRole {
   HARVESTER = "harvester",
   UPGRADER = "upgrader",
-  BUILDER = "builder"
+  BUILDER = "builder",
+  HAULER = "hauler"
 }

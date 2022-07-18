@@ -1,4 +1,8 @@
-type LoadableStructure =
+import { getExtendedCreep } from "creeps/classes";
+import { ManagedStructure } from "structures/StructureManager";
+import { ExtendedCreepList } from "types/CreepsList";
+
+export type LoadableStructure =
   | StructureSpawn
   | StructureTower
   | StructureExtension
@@ -6,44 +10,91 @@ type LoadableStructure =
   | StructureStorage;
 
 class ExtendedRoom extends Room {
+  creeps: ExtendedCreepList;
   spawns: StructureSpawn[];
   sources: Source[];
   buildables: ConstructionSite[];
   loadables: LoadableStructure[];
   extensions: StructureExtension[];
-  towers: StructureTower[];
+  containers: StructureContainer[];
+  managedStructures: ManagedStructure[];
+  damagedStructures: Structure[];
   minAvailableEnergy: number;
+
+  structuresToFill: ManagedStructure[];
+  containersAndStorage: (StructureContainer | StructureStorage)[];
+  energyInStorage: number;
 
   constructor(room: Room) {
     super(room.name);
+    this.creeps = room.find(FIND_MY_CREEPS).reduce((memo, creep) => {
+      memo[creep.name] = getExtendedCreep(creep, creep.memory.type, creep.memory.role);
+      return memo;
+    }, {} as ExtendedCreepList);
     this.energyAvailable = room.energyAvailable;
     this.energyCapacityAvailable = room.energyCapacityAvailable;
-    this.minAvailableEnergy = 550;
+    this.minAvailableEnergy = 600;
     this.spawns = room.find(FIND_MY_SPAWNS);
     this.sources = room.find(FIND_SOURCES);
     this.controller = room.controller || undefined;
     this.buildables = room.find(FIND_CONSTRUCTION_SITES);
-    const { loadables, extensions, towers } = getStructureLists(room);
+    const { loadables, extensions, containers, managedStructures, damagedStructures } =
+      getStructureLists(room);
     this.loadables = loadables;
     this.extensions = extensions;
-    this.towers = towers;
+    this.containers = containers;
+    this.managedStructures = managedStructures;
+    this.damagedStructures = damagedStructures;
+
+    this.structuresToFill =
+      this.managedStructures.filter(structure => {
+        return (
+          structure.store.getUsedCapacity(RESOURCE_ENERGY) /
+            structure.store.getCapacity(RESOURCE_ENERGY) <
+          0.3
+        );
+      }) || [];
+    console.log("structures to fill", this.structuresToFill.length);
+
+    this.containersAndStorage = this.storage
+      ? [...this.containers, this.storage]
+      : this.containers;
+
+    this.energyInStorage = this.containersAndStorage.reduce((memo, structure) => {
+      return memo + structure.store.getUsedCapacity(RESOURCE_ENERGY);
+    }, 0);
   }
 }
 
 const getStructureLists = (room: Room) => {
   const loadables: LoadableStructure[] = [];
   const extensions: StructureExtension[] = [];
-  const towers: StructureTower[] = [];
+  const managedStructures: ManagedStructure[] = [];
+  const damagedStructures: Structure[] = [];
+  const containers: StructureContainer[] = [];
   room.find(FIND_STRUCTURES).forEach((structure: AnyStructure) => {
     const structureType = structure.structureType;
     if (isLoadable(structure)) loadables.push(structure as LoadableStructure);
     if (structureType === STRUCTURE_EXTENSION) extensions.push(structure);
-    if (structureType === STRUCTURE_TOWER) towers.push(structure);
+    if (isManaged(structure)) managedStructures.push(structure as ManagedStructure);
+    if (structure.hits < structure.hitsMax) damagedStructures.push(structure);
+    if (structureType === STRUCTURE_CONTAINER) containers.push(structure);
   });
   console.log(
-    `numtowers=${towers.length}, numextensions=${extensions.length}, numloadables=${loadables.length}`
+    `numManagedStructures=${managedStructures.length}, numExtensions=${extensions.length}, numLoadables=${loadables.length}, damagedStructures=${damagedStructures.length}`
   );
-  return { loadables, extensions, towers };
+
+  return { loadables, extensions, containers, managedStructures, damagedStructures };
+};
+
+const isManaged = (structure: AnyStructure) => {
+  switch (structure.structureType) {
+    case STRUCTURE_TOWER:
+    case STRUCTURE_LINK:
+      return true;
+    default:
+      return false;
+  }
 };
 
 const isLoadable = (structure: AnyStructure) => {

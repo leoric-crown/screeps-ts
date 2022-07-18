@@ -4,6 +4,9 @@ import ExtendedRoom from "./extend/ExtendedRoom";
 import spawner from "./spawner";
 import creepConfigs from "./creeps/creeps.config";
 import CreepManager from "./creeps/CreepManager";
+import StructureManager from './structures/StructureManager';
+import ExtendedStructure, { StructureMemory } from "extend/ExtendedStructure";
+import { CreepTarget } from "extend/ExtendedCreep";
 
 declare global {
   /*
@@ -18,13 +21,17 @@ declare global {
   interface Memory {
     uuid: number;
     log: any;
+    structure: {
+      [structureId: string]: StructureMemory
+    }
   }
 
   interface CreepMemory {
     type: CreepType;
     role: CreepRole;
     state?: number;
-    room?: string;
+    target?: Id<_HasId>;
+    room?: Id<_HasId>;
     working?: boolean;
   }
 
@@ -46,13 +53,15 @@ export const loop = ErrorMapper.wrapLoop(() => {
   const room = new ExtendedRoom(Game.rooms["W8N6"]);
   console.log(`room energy available: ${room.energyAvailable}/${room.energyCapacityAvailable}`);
   Memory.log = { ...Memory.log, room };
+  Memory.structure = {};
 
-  const manager = new CreepManager(Game.creeps, room);
-  const creeps = manager.get();
-  spawner(creeps, room, room.spawns[0], creepConfigs);
-
+  const creepManager = new CreepManager(room);
+  spawner(room, creepConfigs);
+  const structureManager = new StructureManager(room);
   // Run all creeps in the room
-  manager.run();
+  creepManager.run();
+  // Run all managed structures in the room
+  structureManager.run();
 
   // Automatically delete memory of missing creeps
   for (const name in Memory.creeps) {

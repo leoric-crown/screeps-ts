@@ -1,9 +1,19 @@
 import ExtendedCreep from "../extend/ExtendedCreep";
+import ExtendedStructure from "../extend/ExtendedStructure";
 
-export type CreepsList = {
+export type CreepList = {
   [creepName: string]: Creep;
 };
 
-export interface ExtendedCreepsList extends CreepsList {
+export interface ExtendedCreepList extends CreepList {
   [creepName: string]: ExtendedCreep;
 }
+
+export type StructureList = {
+  [creepName: string]: Structure;
+};
+
+export interface ExtendedStructureList extends StructureList {
+  [creepName: string]: ExtendedStructure;
+}
+

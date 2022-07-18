@@ -1,48 +1,24 @@
-import { CreepState } from "../types/CreepState";
-import { CreepsList, ExtendedCreepsList } from "../types/CreepsList";
-import { CreepRole, CreepType } from "../types/Creeps";
+import { CreepState } from "../types/States";
+import { ExtendedCreepList } from "../types/CreepsList";
+import { CreepType } from "../types/Creeps";
 import ExtendedRoom from "../extend/ExtendedRoom";
 import ExtendedCreep from "../extend/ExtendedCreep";
-import { BuilderCreep, HarvesterCreep, UpgraderCreep } from "./classes/";
-
-const getCreepForRole = (creep: Creep, type: CreepType, role: CreepRole) => {
-  switch (role) {
-    case CreepRole.HARVESTER:
-      return new HarvesterCreep(creep);
-    case CreepRole.UPGRADER:
-      return new UpgraderCreep(creep);
-    case CreepRole.BUILDER:
-      return new BuilderCreep(creep);
-    default:
-      throw new Error(
-        `There was an error getting ExtendedCreep for: type: ${type}, role: ${role}`
-      );
-  }
-};
 
 class CreepManager {
-  creeps: ExtendedCreepsList;
+  creeps: ExtendedCreepList;
   room: ExtendedRoom;
-  get: (creepType?: CreepType) => ExtendedCreepsList;
+  getCreeps: (creepType?: CreepType) => ExtendedCreepList;
   run: (creepType?: CreepType) => void;
   private runCreeps: () => void;
 
-  constructor(creeps: CreepsList, room: ExtendedRoom) {
+  constructor(room: ExtendedRoom) {
     this.room = room;
-    const creepList = {} as ExtendedCreepsList;
-    _.forEach(creeps, creep => {
-      creepList[creep.name] = getCreepForRole(
-        creep,
-        creep.memory.type,
-        creep.memory.role
-      );
-    });
-    this.creeps = creepList;
+    this.creeps = room.creeps;
 
-    this.get = (creepType?: CreepType) => {
+    this.getCreeps = (creepType?: CreepType) => {
       if (!creepType) return this.creeps;
       else {
-        const filteredCreeps = {} as ExtendedCreepsList;
+        const filteredCreeps = {} as ExtendedCreepList;
         _.forEach(this.creeps, creep => {
           if (creep.type === creepType) {
             filteredCreeps[creep.name] = creep;
@@ -54,7 +30,7 @@ class CreepManager {
 
     this.run = (creepType?: CreepType) => {
       let total = 0;
-      const creeps = creepType ? this.get(creepType) : this.creeps;
+      const creeps = creepType ? this.getCreeps(creepType) : this.creeps;
       const currentStatus = _.reduce(
         creeps,
         (memo, creep) => {

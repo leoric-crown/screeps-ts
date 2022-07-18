@@ -1,14 +1,9 @@
-import { ExtendedCreepsList } from "./types/CreepsList";
+import { ExtendedCreepList } from "./types/CreepsList";
 import { CreepConfig } from "./creeps/creeps.config";
 import ExtendedRoom from "./extend/ExtendedRoom";
 import ExtendedCreep from "./extend/ExtendedCreep";
 
-const spawner = (
-  creeps: ExtendedCreepsList,
-  room: ExtendedRoom,
-  spawn: StructureSpawn,
-  creepConfigs: CreepConfig[]
-) => {
+const spawner = (room: ExtendedRoom, creepConfigs: CreepConfig[]) => {
   interface CreepCounts {
     [index: string]: number;
   }
@@ -17,7 +12,7 @@ const spawner = (
   let creepCounts = {} as CreepCounts;
   for (let conf of creepConfigs) {
     creepCounts[conf.creepType] = _.filter(
-      creeps,
+      room.creeps,
       (creep: ExtendedCreep) => creep.type === conf.creepType
     ).length;
     if (creepCounts[conf.creepType] < conf.total && room.energyAvailable > 300) {
@@ -35,17 +30,19 @@ const spawner = (
       };
       const creepName = `${conf.bodies.map(body => bodyAbb[body]).join("")}-${Game.time}`;
 
-      if (
-        spawn.spawnCreep(conf.bodies, creepName, {
-          memory: {
-            type: conf.creepType,
-            role: conf.role
-          }
-        })
-      )
+      const trySpawn = room.spawns[0].spawnCreep(conf.bodies, creepName, {
+        memory: {
+          type: conf.creepType,
+          role: conf.role
+        }
+      });
+      if (trySpawn === 0) {
         console.log(
           `Spawner: ${room} - spawning: ${creepName} with type: ${conf.creepType} and role: ${conf.role}`
         );
+      } else {
+        console.log(`Spawner: ${room} - failed to spawn creep ERROR: ${trySpawn}`);
+      }
     }
   }
   !spawned &&
