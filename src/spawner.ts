@@ -20,10 +20,7 @@ const spawner = (
       creeps,
       (creep: ExtendedCreep) => creep.type === conf.creepType
     ).length;
-    if (
-      creepCounts[conf.creepType] < conf.total &&
-      room.energyAvailable > 300
-    ) {
+    if (creepCounts[conf.creepType] < conf.total && room.energyAvailable > 300) {
       const bodyAbb = {
         move: "M",
         work: "W",
@@ -36,22 +33,25 @@ const spawner = (
         // TOUGH: "T",
         // CLAIM: "C"
       };
-      const creepName = `${conf.bodies.map(body => bodyAbb[body]).join("")}-${
-        Game.time
-      }`;
-      console.log(
-        `Spawner: ${room} - spawning: ${creepName} with type: ${conf.creepType} and role: ${conf.role}`
-      );
-      spawn.spawnCreep(conf.bodies, creepName, {
-        memory: {
-          type: conf.creepType,
-          role: conf.role
-        }
-      });
-      spawned = true;
+      const creepName = `${conf.bodies.map(body => bodyAbb[body]).join("")}-${Game.time}`;
+
+      if (
+        spawn.spawnCreep(conf.bodies, creepName, {
+          memory: {
+            type: conf.creepType,
+            role: conf.role
+          }
+        })
+      )
+        console.log(
+          `Spawner: ${room} - spawning: ${creepName} with type: ${conf.creepType} and role: ${conf.role}`
+        );
     }
   }
-  !spawned && console.log(`Spawner: ${room} - creepCounts satisfied config, no need to spawn more creeps`)
+  !spawned &&
+    console.log(
+      `Spawner: ${room} - creepCounts satisfied config, no need to spawn more creeps`
+    );
   console.log(`Spawner: ${room} - creepCounts: ${JSON.stringify(creepCounts)}`);
 };
 
