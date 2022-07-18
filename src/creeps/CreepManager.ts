@@ -72,10 +72,9 @@ class CreepManager {
       console.log(`CreepManager: ${this.room} - ${JSON.stringify(currentStatus)}`);
       for (let [state, count] of Object.entries(currentStatus)) {
         console.log(
-          `CreepManager: ${this.room} - ${state}ing: ${count}`.replace(
-            "upgrade",
-            "upgrad"
-          )
+          `CreepManager: ${this.room} - ${state}ing: ${count}`
+            .replace("upgradeing", "upgrading")
+            .replace("initing", "initializing")
         );
       }
       console.log(`CreepManager: Total Creeps: ${total}`);

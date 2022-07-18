@@ -12,8 +12,9 @@ const spawner = (
   interface CreepCounts {
     [index: string]: number;
   }
-  let creepCounts = {} as CreepCounts;
 
+  let spawned = false;
+  let creepCounts = {} as CreepCounts;
   for (let conf of creepConfigs) {
     creepCounts[conf.creepType] = _.filter(
       creeps,
@@ -39,7 +40,7 @@ const spawner = (
         Game.time
       }`;
       console.log(
-        `module spawner - spawning: ${creepName} with type: ${conf.creepType} and role: ${conf.role}`
+        `Spawner: ${room} - spawning: ${creepName} with type: ${conf.creepType} and role: ${conf.role}`
       );
       spawn.spawnCreep(conf.bodies, creepName, {
         memory: {
@@ -47,9 +48,11 @@ const spawner = (
           role: conf.role
         }
       });
+      spawned = true;
     }
   }
-  console.log(`module spawner - creepCounts: ${JSON.stringify(creepCounts)}`);
+  !spawned && console.log(`Spawner: ${room} - creepCounts satisfied config, no need to spawn more creeps`)
+  console.log(`Spawner: ${room} - creepCounts: ${JSON.stringify(creepCounts)}`);
 };
 
 export default spawner;
