@@ -27,18 +27,28 @@ class Tower extends ExtendedStructure {
     this.my = tower.my;
     this.owner = tower.owner;
 
-    this.damagedCreeps = _.filter(this.room.creeps, creep => creep.hits < creep.hitsMax);
-    const attackProc = () => {};
+    this.damagedCreeps = _.filter(
+      this.room.find(FIND_MY_CREEPS),
+      creep => creep.hits < creep.hitsMax
+    );
+
+    const attackProc = (room: ExtendedRoom) => {
+      const enemies = room.find(FIND_HOSTILE_CREEPS);
+      const target = this.pos.findClosestByRange(enemies);
+      target && this.attack(target);
+    };
+
     const healProc = () => {
       if (this.damagedCreeps.length > 0) {
         const target = this.pos.findClosestByRange(this.damagedCreeps);
         target && this.heal(target);
       }
     };
+
     const repairProc = () => {
       if (this.room.damagedStructures.length > 0) {
         const roads: Structure[] = [];
-        const walls: Structure[] = [];
+        const defenses: Structure[] = [];
         const others: Structure[] = [];
         this.room.damagedStructures.forEach(structure => {
           const structureType = structure.structureType;
@@ -47,13 +57,15 @@ class Tower extends ExtendedStructure {
               roads.push(structure);
               break;
             case STRUCTURE_WALL:
-              walls.push(structure);
+              defenses.push(structure);
+              break;
+            case STRUCTURE_RAMPART:
+              defenses.push(structure);
               break;
             default:
               others.push(structure);
               break;
           }
-          structureType === STRUCTURE_ROAD && roads.push(structure);
         });
         let target = undefined;
         if (roads.length > 0) {
@@ -66,11 +78,10 @@ class Tower extends ExtendedStructure {
           })[0];
         }
 
-        if (!target && walls.length > 0) {
-          if (room.energyAvailable > room.energyCapacityAvailable * 0.7)
-            target = walls.sort((a, b) => {
-              return a.hits < b.hits ? -1 : 1;
-            })[0];
+        if (!target && defenses.length > 0) {
+          target = defenses.sort((a, b) => {
+            return a.hits < b.hits ? -1 : 1;
+          })[0];
         }
 
         target && this.repair(target);
@@ -91,12 +102,19 @@ class Tower extends ExtendedStructure {
       attack: {
         code: StateCode.ATTACK,
         run: attackProc,
-        transition: () => {}
+        transition: (room: ExtendedRoom) => {
+          if (room.find(FIND_HOSTILE_CREEPS).length === 0) {
+            this.updateStateCode(StateCode.INIT, "Threats eliminated. Resetting...");
+          }
+        }
       },
       repair: {
         code: StateCode.REPAIR,
         run: repairProc,
         transition: () => {
+          if (room.find(FIND_HOSTILE_CREEPS).length > 0) {
+            this.updateStateCode(StateCode.ATTACK, "Attacking hostile creeps");
+          }
           if (this.damagedCreeps.length > 0) {
             this.updateStateCode(StateCode.HEAL, "Healing my fellow creeps");
           }
@@ -105,7 +123,10 @@ class Tower extends ExtendedStructure {
       heal: {
         code: StateCode.HEAL,
         run: healProc,
-        transition: () => {
+        transition: (room: ExtendedRoom) => {
+          if (room.find(FIND_HOSTILE_CREEPS).length > 0) {
+            this.updateStateCode(StateCode.ATTACK, "Attacking hostile creeps");
+          }
           if (this.damagedCreeps.length === 0) {
             this.room.damagedStructures.length > 0 &&
               this.updateStateCode(StateCode.REPAIR, "Repairing structures");

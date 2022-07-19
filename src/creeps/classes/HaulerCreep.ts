@@ -39,25 +39,26 @@ class HaulerCreep extends ExtendedCreep {
         code: StateCode.HAUL,
         run: this.haulProc,
         transition: (room: ExtendedRoom) => {
-          if (this.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
+          if (this.store.getFreeCapacity(RESOURCE_ENERGY) === 0 || room.energyInStorage === 0) {
             if (
-              room.energyAvailable >= room.minAvailableEnergy &&
+              room.energyAvailable > room.minAvailableEnergy &&
               room.structuresToFill?.length > 0
             ) {
               this.updateStateCode(StateCode.LOAD_STRUCTURE, "loadStruct");
               return;
             }
             this.updateStateCode(StateCode.LOAD, "load");
-          } else {
-            const target = Game.getObjectById(
-              this.memory.target as Id<LoadableStructure>
-            );
-            if (!target) {
-              this.updateStateCode(StateCode.LOAD, "load");
-            } else if (target.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
-              this.updateStateCode(StateCode.LOAD, "load");
-            }
           }
+          // else {
+          //   const target = Game.getObjectById(
+          //     this.memory.target as Id<LoadableStructure>
+          //   );
+          //   if (!target) {
+          //     this.updateStateCode(StateCode.LOAD, "load");
+          //   } else if (target.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
+          //     this.updateStateCode(StateCode.LOAD, "load");
+          //   }
+          // }
         }
       },
       load: {
@@ -86,8 +87,6 @@ class HaulerCreep extends ExtendedCreep {
               return;
             }
             this.updateStateCode(StateCode.HARVEST, "harvest");
-          } else if (room.loadables.length === 0 && room.structuresToFill.length > 0) {
-            this.updateStateCode(StateCode.LOAD_STRUCTURE, "loadStruct");
           }
         }
       },

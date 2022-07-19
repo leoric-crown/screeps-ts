@@ -15,7 +15,7 @@ const spawner = (room: ExtendedRoom, creepConfigs: CreepConfig[]) => {
       room.creeps,
       (creep: ExtendedCreep) => creep.type === conf.creepType
     ).length;
-    if (creepCounts[conf.creepType] < conf.total && room.energyAvailable > 300) {
+    if (creepCounts[conf.creepType] < conf.total && room.energyAvailable >= 300) {
       const bodyAbb = {
         move: "M",
         work: "W",
@@ -36,10 +36,11 @@ const spawner = (room: ExtendedRoom, creepConfigs: CreepConfig[]) => {
           role: conf.role
         }
       });
-      if (trySpawn === 0) {
+      if (trySpawn === OK) {
         console.log(
           `Spawner: ${room} - spawning: ${creepName} with type: ${conf.creepType} and role: ${conf.role}`
         );
+        break;
       } else {
         console.log(`Spawner: ${room} - failed to spawn creep ERROR: ${trySpawn}`);
       }

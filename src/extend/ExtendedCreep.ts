@@ -138,7 +138,9 @@ export class ExtendedCreep extends Creep {
       }
     };
     this.loadStructureProc = (room: ExtendedRoom) => {
-      const target = room.spawns[0].pos.findClosestByPath(room.managedStructures);
+      const target = room.managedStructures.filter(
+        structure => structure.store.getFreeCapacity() !== 0
+      ).sort((a,b) => a.store.energy < b.store.energy ? -1 : 1)[0];
       if (target && target.store.getFreeCapacity(RESOURCE_ENERGY) >= 50) {
         if (this.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE)
           this.moveTo(target);

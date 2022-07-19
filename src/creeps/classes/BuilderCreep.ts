@@ -26,7 +26,7 @@ class BuilderCreep extends ExtendedCreep {
         transition: (room: ExtendedRoom) => {
           if (
             room.buildables.length > 0 &&
-            room.energyAvailable >= this.store.getCapacity()
+            room.energyAvailable > room.minAvailableEnergy
           ) {
             this.updateStateCode(StateCode.LOADSELF, "loadSelf in");
           } else {

@@ -4,7 +4,6 @@ import { ExtendedCreepList } from "types/CreepsList";
 
 export type LoadableStructure =
   | StructureSpawn
-  | StructureTower
   | StructureExtension
   | StructureContainer
   | StructureStorage;
