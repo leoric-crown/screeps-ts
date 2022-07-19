@@ -72,6 +72,12 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
   }
 
+  for (const id in Memory.structure) {
+    if (!(id in Game.structures)) {
+      delete Memory.structure[id];
+    }
+  }
+
   console.log(`CPU Used this tick: ${Game.cpu.getUsed()}`);
   console.log(
     `------------------------end of game tick ${Game.time}------------------------`
