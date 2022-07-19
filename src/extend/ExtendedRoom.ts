@@ -33,7 +33,7 @@ class ExtendedRoom extends Room {
     }, {} as ExtendedCreepList);
     this.energyAvailable = room.energyAvailable;
     this.energyCapacityAvailable = room.energyCapacityAvailable;
-    this.minAvailableEnergy = 600;
+    this.minAvailableEnergy = 650;
     this.spawns = room.find(FIND_MY_SPAWNS);
     this.sources = room.find(FIND_SOURCES);
     this.controller = room.controller || undefined;
@@ -56,8 +56,8 @@ class ExtendedRoom extends Room {
       }) || [];
     console.log("structures to fill", this.structuresToFill.length);
 
-    this.containersAndStorage = this.storage
-      ? [...this.containers, this.storage]
+    this.containersAndStorage = room.storage
+      ? [...this.containers, room.storage]
       : this.containers;
 
     this.energyInStorage = this.containersAndStorage.reduce((memo, structure) => {

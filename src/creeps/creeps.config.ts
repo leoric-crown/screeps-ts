@@ -18,6 +18,12 @@ const creepConfigs: CreepConfig[] = [
     // no one else harvests now, get haulers to pick up minerals off the floor
   },
   {
+    creepType: CreepType.HAULER,
+    role: CreepRole.HAULER,
+    total: 1,
+    bodies: [WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE]
+  },
+  {
     creepType: CreepType.BUILDER,
     role: CreepRole.BUILDER,
     total: 1,
@@ -28,12 +34,6 @@ const creepConfigs: CreepConfig[] = [
     role: CreepRole.UPGRADER,
     total: 2,
     bodies: [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE]
-  },
-  {
-    creepType: CreepType.HAULER,
-    role: CreepRole.HAULER,
-    total: 1,
-    bodies: [WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE]
   }
 ];
 

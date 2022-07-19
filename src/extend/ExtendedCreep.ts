@@ -49,6 +49,7 @@ export class ExtendedCreep extends Creep {
 
     this.updateStateCode = (code: StateCode, message?: string) => {
       this.memory.state = code;
+      this.memory.target = undefined;
       if (message) this.say(message);
     };
 
@@ -119,9 +120,7 @@ export class ExtendedCreep extends Creep {
       if (target == undefined) {
         const findTarget =
           this.pos.findClosestByPath(room.containersAndStorage, {
-            filter: structure =>
-              structure.store.getUsedCapacity(RESOURCE_ENERGY) >=
-              this.store.getFreeCapacity(RESOURCE_ENERGY)
+            filter: structure => structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0
           }) || undefined;
         if (findTarget) {
           target = findTarget;
@@ -135,10 +134,13 @@ export class ExtendedCreep extends Creep {
           target as StructureContainer | StructureStorage,
           RESOURCE_ENERGY
         );
+        console.log("tryWithdraw ", tryWithdraw);
         if (tryWithdraw === ERR_NOT_IN_RANGE) {
           console.log("moving to withdraw");
           this.moveTo(target);
-        } else console.log("tryWithdraw ", tryWithdraw);
+        } else if (tryWithdraw === ERR_NOT_ENOUGH_ENERGY) {
+          this.memory.target = undefined;
+        }
       } else console.log("there is no target");
     };
     this.loadStructureProc = (room: ExtendedRoom) => {

@@ -55,9 +55,24 @@ class Tower extends ExtendedStructure {
           }
           structureType === STRUCTURE_ROAD && roads.push(structure);
         });
-        let target = roads.length > 0 && this.pos.findClosestByRange(roads);
-        // !target && walls.length > 0 && (target = this.pos.findClosestByRange(walls));
-        !target && others.length > 0 && (target = this.pos.findClosestByRange(others));
+        let target = undefined;
+        if (roads.length > 0) {
+          target = this.pos.findClosestByRange(roads);
+        }
+
+        if (!target && others.length > 0) {
+          target = others.sort((a, b) => {
+            return a.hits < b.hits ? -1 : 1;
+          })[0];
+        }
+
+        if (!target && walls.length > 0) {
+          if (room.energyAvailable > room.energyCapacityAvailable * 0.7)
+            target = walls.sort((a, b) => {
+              return a.hits < b.hits ? -1 : 1;
+            })[0];
+        }
+
         target && this.repair(target);
       }
     };

@@ -4,7 +4,7 @@ import ExtendedRoom from "./extend/ExtendedRoom";
 import spawner from "./spawner";
 import creepConfigs from "./creeps/creeps.config";
 import CreepManager from "./creeps/CreepManager";
-import StructureManager from './structures/StructureManager';
+import StructureManager from "./structures/StructureManager";
 import ExtendedStructure, { StructureMemory } from "extend/ExtendedStructure";
 import { CreepTarget } from "extend/ExtendedCreep";
 
@@ -22,8 +22,8 @@ declare global {
     uuid: number;
     log: any;
     structure: {
-      [structureId: string]: StructureMemory
-    }
+      [structureId: string]: StructureMemory;
+    };
   }
 
   interface CreepMemory {
@@ -51,7 +51,9 @@ export const loop = ErrorMapper.wrapLoop(() => {
   );
 
   const room = new ExtendedRoom(Game.rooms["W8N6"]);
-  console.log(`room energy available: ${room.energyAvailable}/${room.energyCapacityAvailable}`);
+  console.log(
+    `room energy available: ${room.energyAvailable}/${room.energyCapacityAvailable}`
+  );
   Memory.log = { ...Memory.log, room };
   Memory.structure = {};
 
@@ -70,6 +72,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
   }
 
+  console.log(`CPU Used this tick: ${Game.cpu.getUsed()}`);
   console.log(
     `------------------------end of game tick ${Game.time}------------------------`
   );
