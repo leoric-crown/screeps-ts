@@ -54,7 +54,6 @@ class ExtendedRoom extends Room {
           0.3
         );
       }) || [];
-    console.log(`Room: ${this.name} numStructuresToFill=${this.structuresToFill.length}`);
 
     this.containersAndStorage = room.storage
       ? [...this.containers, room.storage]
@@ -63,6 +62,10 @@ class ExtendedRoom extends Room {
     this.energyInStorage = this.containersAndStorage.reduce((memo, structure) => {
       return memo + structure.store.getUsedCapacity(RESOURCE_ENERGY);
     }, 0);
+
+    console.log(
+      `Room: [room ${this.name}] - numStructuresToFill=${this.structuresToFill.length}, energyInStorage: ${this.energyInStorage}, energyAvailable: ${this.energyAvailable} / ${this.energyCapacityAvailable}`
+    );
   }
 
   getStructureLists = (room: Room) => {
@@ -80,12 +83,11 @@ class ExtendedRoom extends Room {
       if (structureType === STRUCTURE_CONTAINER) containers.push(structure);
     });
     console.log(
-      `Room: ${this.name} numManagedStructures=${managedStructures.length}, numExtensions=${extensions.length}, numLoadables=${loadables.length}, damagedStructures=${damagedStructures.length}`
+      `Room: [room ${this.name}] - numManagedStructures=${managedStructures.length}, numExtensions=${extensions.length}, numLoadables=${loadables.length}, damagedStructures=${damagedStructures.length}`
     );
 
     return { loadables, extensions, containers, managedStructures, damagedStructures };
   };
-
 }
 
 const isManaged = (structure: AnyStructure) => {

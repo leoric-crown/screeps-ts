@@ -51,9 +51,6 @@ export const loop = ErrorMapper.wrapLoop(() => {
   );
 
   const room = new ExtendedRoom(Game.rooms["W8N6"]);
-  console.log(
-    `Room:  ${room} - energyAvailable: ${room.energyAvailable}/${room.energyCapacityAvailable}`
-  );
   Memory.log = { ...Memory.log, room };
   Memory.structure = {};
 
