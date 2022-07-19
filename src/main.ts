@@ -1,12 +1,11 @@
 import { CreepRole, CreepType } from "./types/Creeps";
 import { ErrorMapper } from "utils/ErrorMapper";
-import ExtendedRoom from "./extend/ExtendedRoom";
+import ExtendedRoom from "./rooms/ExtendedRoom";
 import spawner from "./spawner";
 import creepConfigs from "./creeps/creeps.config";
 import CreepManager from "./creeps/CreepManager";
 import StructureManager from "./structures/StructureManager";
-import ExtendedStructure, { StructureMemory } from "extend/ExtendedStructure";
-import { CreepTarget } from "extend/ExtendedCreep";
+import { StructureMemory } from "./structures/ExtendedStructure";
 
 declare global {
   /*
@@ -21,7 +20,7 @@ declare global {
   interface Memory {
     uuid: number;
     log: any;
-    structure: {
+    structures: {
       [structureId: string]: StructureMemory;
     };
   }
@@ -52,7 +51,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
 
   const room = new ExtendedRoom(Game.rooms["W8N6"]);
   Memory.log = { ...Memory.log, room };
-  Memory.structure = {};
+  Memory.structures = {};
 
   const creepManager = new CreepManager(room);
   spawner(room, creepConfigs);
@@ -69,9 +68,9 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
   }
 
-  for (const id in Memory.structure) {
+  for (const id in Memory.structures) {
     if (!(id in Game.structures)) {
-      delete Memory.structure[id];
+      delete Memory.structures[id];
     }
   }
 

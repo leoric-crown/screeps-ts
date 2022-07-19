@@ -1,7 +1,7 @@
 import { CreepRole, CreepType } from "../types/Creeps";
 import { StateCode } from "types/States";
 import { CreepRoleStates } from "creeps/classes";
-import ExtendedRoom, { LoadableStructure } from "./ExtendedRoom";
+import ExtendedRoom, { LoadableStructure } from "../rooms/ExtendedRoom";
 
 export type CreepTarget = Creep | ConstructionSite | Structure;
 

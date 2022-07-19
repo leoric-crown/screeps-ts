@@ -1,8 +1,8 @@
 import { CreepState } from "../types/States";
 import { ExtendedCreepList } from "../types/CreepsList";
 import { CreepType } from "../types/Creeps";
-import ExtendedRoom from "../extend/ExtendedRoom";
-import ExtendedCreep from "../extend/ExtendedCreep";
+import ExtendedRoom from "../rooms/ExtendedRoom";
+import ExtendedCreep from "./ExtendedCreep";
 
 class CreepManager {
   creeps: ExtendedCreepList;

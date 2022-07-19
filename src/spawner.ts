@@ -1,7 +1,6 @@
-import { ExtendedCreepList } from "./types/CreepsList";
 import { CreepConfig } from "./creeps/creeps.config";
-import ExtendedRoom from "./extend/ExtendedRoom";
-import ExtendedCreep from "./extend/ExtendedCreep";
+import ExtendedRoom from "./rooms/ExtendedRoom";
+import ExtendedCreep from "./creeps/ExtendedCreep";
 
 const spawner = (room: ExtendedRoom, creepConfigs: CreepConfig[]) => {
   interface CreepCounts {

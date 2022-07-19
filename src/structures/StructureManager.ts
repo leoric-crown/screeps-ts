@@ -1,5 +1,5 @@
-import ExtendedRoom from "../extend/ExtendedRoom";
-import ExtendedStructure from "extend/ExtendedStructure";
+import ExtendedRoom from "../rooms/ExtendedRoom";
+import ExtendedStructure from "./ExtendedStructure";
 import { ExtendedStructureList } from "../types/CreepsList";
 import { StateCode, StructureState } from "types/States";
 import { getExtendedStructure } from "./classes";

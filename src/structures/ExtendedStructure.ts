@@ -1,6 +1,6 @@
 import { StateCode } from "types/States";
-import { StructureStates, Tower } from "../structures/classes";
-import ExtendedRoom from "./ExtendedRoom";
+import { StructureStates, Tower } from "./classes";
+import ExtendedRoom from "../rooms/ExtendedRoom";
 
 export interface StructureMemory {
   state?: StateCode;
@@ -11,11 +11,11 @@ class ExtendedStructure extends Structure {
   room: ExtendedRoom;
 
   public get memory(): StructureMemory {
-    return Memory.structure[this.id];
+    return Memory.structures[this.id];
 
   }
   public set memory(value: StructureMemory) {
-    Memory.structure[this.id] = value;
+    Memory.structures[this.id] = value;
   }
   private _states: StructureStates | undefined;
   public get states(): StructureStates | undefined {
@@ -30,7 +30,7 @@ class ExtendedStructure extends Structure {
   constructor(structure: Structure, room: ExtendedRoom) {
     super(structure.id);
     this.room = room
-    this.memory = (Memory.structure[structure.id] || emptyMemory) as StructureMemory;
+    this.memory = (Memory.structures[structure.id] || emptyMemory) as StructureMemory;
 
     this.updateStateCode = (code: StateCode, message?: string) => {
       this.memory.state = code;

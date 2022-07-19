@@ -1,4 +1,4 @@
-import ExtendedRoom from "extend/ExtendedRoom";
+import ExtendedRoom from "../../rooms/ExtendedRoom";
 import Tower, { TowerStates } from "./Tower";
 
 export type StructureStates = TowerStates;

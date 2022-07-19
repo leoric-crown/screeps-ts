@@ -1,7 +1,7 @@
 import { BaseStructureStates, StructureState, StateCode } from "../../types/States";
-import ExtendedRoom from "../../extend/ExtendedRoom";
-import ExtendedStructure from "../../extend/ExtendedStructure";
-import ExtendedCreep from "extend/ExtendedCreep";
+import ExtendedRoom from "../../rooms/ExtendedRoom";
+import ExtendedStructure from "../ExtendedStructure";
+import ExtendedCreep from "../../creeps/ExtendedCreep";
 
 export interface TowerStates extends BaseStructureStates {
   attack: StructureState;

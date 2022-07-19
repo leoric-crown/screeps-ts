@@ -1,5 +1,5 @@
-import ExtendedCreep from "../extend/ExtendedCreep";
-import ExtendedStructure from "../extend/ExtendedStructure";
+import ExtendedCreep from "../creeps/ExtendedCreep";
+import ExtendedStructure from "../structures/ExtendedStructure";
 
 export type CreepList = {
   [creepName: string]: Creep;

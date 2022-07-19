@@ -1,4 +1,4 @@
-import ExtendedRoom from "../extend/ExtendedRoom";
+import ExtendedRoom from "../rooms/ExtendedRoom";
 
 export enum StateCode {
   INIT = -1,

@@ -1,6 +1,6 @@
 import { CreepRole, CreepType } from "../../types/Creeps";
-import ExtendedRoom, { LoadableStructure } from "../../extend/ExtendedRoom";
-import ExtendedCreep, { CreepTarget } from "../../extend/ExtendedCreep";
+import ExtendedRoom, { LoadableStructure } from "../../rooms/ExtendedRoom";
+import ExtendedCreep, { CreepTarget } from "../ExtendedCreep";
 import { BaseCreepStates, CreepState, StateCode } from "../../types/States";
 
 export interface HaulerRoleStates extends BaseCreepStates {
