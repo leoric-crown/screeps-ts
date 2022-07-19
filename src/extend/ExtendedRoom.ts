@@ -39,7 +39,7 @@ class ExtendedRoom extends Room {
     this.controller = room.controller || undefined;
     this.buildables = room.find(FIND_CONSTRUCTION_SITES);
     const { loadables, extensions, containers, managedStructures, damagedStructures } =
-      getStructureLists(room);
+      this.getStructureLists(room);
     this.loadables = loadables;
     this.extensions = extensions;
     this.containers = containers;
@@ -54,7 +54,7 @@ class ExtendedRoom extends Room {
           0.3
         );
       }) || [];
-    console.log(`numStructuresToFill=${this.structuresToFill.length}`);
+    console.log(`Room: ${this.name} numStructuresToFill=${this.structuresToFill.length}`);
 
     this.containersAndStorage = room.storage
       ? [...this.containers, room.storage]
@@ -64,28 +64,29 @@ class ExtendedRoom extends Room {
       return memo + structure.store.getUsedCapacity(RESOURCE_ENERGY);
     }, 0);
   }
+
+  getStructureLists = (room: Room) => {
+    const loadables: LoadableStructure[] = [];
+    const extensions: StructureExtension[] = [];
+    const managedStructures: ManagedStructure[] = [];
+    const damagedStructures: Structure[] = [];
+    const containers: StructureContainer[] = [];
+    room.find(FIND_STRUCTURES).forEach((structure: AnyStructure) => {
+      const structureType = structure.structureType;
+      if (isLoadable(structure)) loadables.push(structure as LoadableStructure);
+      if (structureType === STRUCTURE_EXTENSION) extensions.push(structure);
+      if (isManaged(structure)) managedStructures.push(structure as ManagedStructure);
+      if (structure.hits < structure.hitsMax) damagedStructures.push(structure);
+      if (structureType === STRUCTURE_CONTAINER) containers.push(structure);
+    });
+    console.log(
+      `Room: ${this.name} numManagedStructures=${managedStructures.length}, numExtensions=${extensions.length}, numLoadables=${loadables.length}, damagedStructures=${damagedStructures.length}`
+    );
+
+    return { loadables, extensions, containers, managedStructures, damagedStructures };
+  };
+
 }
-
-const getStructureLists = (room: Room) => {
-  const loadables: LoadableStructure[] = [];
-  const extensions: StructureExtension[] = [];
-  const managedStructures: ManagedStructure[] = [];
-  const damagedStructures: Structure[] = [];
-  const containers: StructureContainer[] = [];
-  room.find(FIND_STRUCTURES).forEach((structure: AnyStructure) => {
-    const structureType = structure.structureType;
-    if (isLoadable(structure)) loadables.push(structure as LoadableStructure);
-    if (structureType === STRUCTURE_EXTENSION) extensions.push(structure);
-    if (isManaged(structure)) managedStructures.push(structure as ManagedStructure);
-    if (structure.hits < structure.hitsMax) damagedStructures.push(structure);
-    if (structureType === STRUCTURE_CONTAINER) containers.push(structure);
-  });
-  console.log(
-    `numManagedStructures=${managedStructures.length}, numExtensions=${extensions.length}, numLoadables=${loadables.length}, damagedStructures=${damagedStructures.length}`
-  );
-
-  return { loadables, extensions, containers, managedStructures, damagedStructures };
-};
 
 const isManaged = (structure: AnyStructure) => {
   switch (structure.structureType) {
