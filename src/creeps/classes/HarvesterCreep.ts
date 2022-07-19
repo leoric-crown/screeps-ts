@@ -34,10 +34,6 @@ class HarvesterCreep extends ExtendedCreep {
         code: StateCode.HARVEST,
         run: this.harvestProc,
         transition: (room: ExtendedRoom) => {
-          console.log(
-            "in harvest transition, room source energy",
-            room.sources[0].energy
-          );
           if (
             this.store.energy === this.store.getCapacity() ||
             room.sources[0].energy === 0
@@ -70,10 +66,8 @@ class HarvesterCreep extends ExtendedCreep {
           }
         },
         transition: (room: ExtendedRoom) => {
-          console.log("in load transition, room source energy", room.sources[0].energy);
           if (this.store.energy === 0 || room.loadables[0] === undefined) {
             if (room.sources[0].energy > 0) {
-              console.log("setting to harvest");
               this.updateStateCode(StateCode.HARVEST, "harvest");
             } else if (room.energyAvailable >= room.minAvailableEnergy) {
               this.updateStateCode(StateCode.UPGRADE, "upgrade");

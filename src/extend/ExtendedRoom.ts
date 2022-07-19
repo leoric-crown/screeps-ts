@@ -54,7 +54,7 @@ class ExtendedRoom extends Room {
           0.3
         );
       }) || [];
-    console.log("structures to fill", this.structuresToFill.length);
+    console.log(`numStructuresToFill=${this.structuresToFill.length}`);
 
     this.containersAndStorage = room.storage
       ? [...this.containers, room.storage]

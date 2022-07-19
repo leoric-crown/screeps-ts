@@ -79,15 +79,12 @@ export class ExtendedCreep extends Creep {
 
       if (target == undefined)
         target = this.pos.findClosestByPath(targets) || room.spawns[0];
-      console.log(`target is ${target}, ${this.name}`);
       const tryLoad = this.transfer(target as LoadableStructure, RESOURCE_ENERGY);
-      console.log(`tryLoad: ${tryLoad}`);
       if (tryLoad === ERR_NOT_IN_RANGE) {
         this.moveTo(target, {
           visualizePathStyle: { stroke: "#ffffff" }
         });
       } else if (tryLoad === ERR_FULL) {
-        console.log(`target ${this.memory.target} is full`);
         this.memory.target = undefined;
       }
     };
@@ -129,23 +126,19 @@ export class ExtendedCreep extends Creep {
       }
 
       if (target !== undefined) {
-        console.log("there is a target", target);
         const tryWithdraw = this.withdraw(
           target as StructureContainer | StructureStorage,
           RESOURCE_ENERGY
         );
-        console.log("tryWithdraw ", tryWithdraw);
         if (tryWithdraw === ERR_NOT_IN_RANGE) {
-          console.log("moving to withdraw");
           this.moveTo(target);
         } else if (tryWithdraw === ERR_NOT_ENOUGH_ENERGY) {
           this.memory.target = undefined;
         }
-      } else console.log("there is no target");
+      }
     };
     this.loadStructureProc = (room: ExtendedRoom) => {
       const target = room.spawns[0].pos.findClosestByPath(room.managedStructures);
-      console.log(`target = ${target}`);
       if (target && target.store.getFreeCapacity(RESOURCE_ENERGY) >= 50) {
         if (this.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE)
           this.moveTo(target);
