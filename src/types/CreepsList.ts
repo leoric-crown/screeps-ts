@@ -1,5 +1,6 @@
+import { ManagedStructure } from "structures/StructureManager";
 import ExtendedCreep from "../creeps/ExtendedCreep";
-import ExtendedStructure from "../structures/ExtendedStructure";
+import ExtendedStructure, { StatefulStructure } from "../structures/ExtendedStructure";
 
 export type CreepList = {
   [creepName: string]: Creep;
@@ -17,3 +18,6 @@ export interface ExtendedStructureList extends StructureList {
   [creepName: string]: ExtendedStructure;
 }
 
+export interface StatefulStructureList extends ExtendedStructureList {
+  [creepName: string]: StatefulStructure;
+}

@@ -1,19 +1,21 @@
 import { CreepState } from "../types/States";
 import { ExtendedCreepList } from "../types/CreepsList";
 import { CreepType } from "../types/Creeps";
-import ExtendedRoom from "../rooms/ExtendedRoom";
+import StatefulRoom from "../rooms/StatefulRoom";
 import ExtendedCreep from "./ExtendedCreep";
 
 class CreepManager {
   creeps: ExtendedCreepList;
-  room: ExtendedRoom;
+  room: StatefulRoom;
   getCreeps: (creepType?: CreepType) => ExtendedCreepList;
   run: (creepType?: CreepType) => void;
   private runCreeps: () => void;
 
-  constructor(room: ExtendedRoom) {
+  constructor(room: StatefulRoom) {
     this.room = room;
-    this.creeps = room.creeps;
+    let creepList = {} as ExtendedCreepList
+    room.creeps.forEach(creep => creepList[creep.name] = creep);
+    this.creeps = creepList;
 
     this.getCreeps = (creepType?: CreepType) => {
       if (!creepType) return this.creeps;
@@ -46,13 +48,6 @@ class CreepManager {
         {} as any
       );
       console.log(`CreepManager: ${this.room} - ${JSON.stringify(currentStatus)}`);
-      for (let [state, count] of Object.entries(currentStatus)) {
-        console.log(
-          `CreepManager: ${this.room} - ${state}ing: ${count}`
-            .replace("upgradeing", "upgrading")
-            .replace("initing", "initializing")
-        );
-      }
       console.log(`CreepManager: Total Creeps: ${total}`);
 
       this.runCreeps();

@@ -14,7 +14,7 @@ const spawner = (room: ExtendedRoom, creepConfigs: CreepConfig[]) => {
       room.creeps,
       (creep: ExtendedCreep) => creep.type === conf.creepType
     ).length;
-    if (creepCounts[conf.creepType] < conf.total && room.energyAvailable >= 300) {
+    if (creepCounts[conf.creepType] < conf.desired && room.energyAvailable >= 300) {
       const bodyAbb = {
         move: "M",
         work: "W",

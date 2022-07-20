@@ -49,16 +49,6 @@ class HaulerCreep extends ExtendedCreep {
             }
             this.updateStateCode(StateCode.LOAD, "load");
           }
-          // else {
-          //   const target = Game.getObjectById(
-          //     this.memory.target as Id<LoadableStructure>
-          //   );
-          //   if (!target) {
-          //     this.updateStateCode(StateCode.LOAD, "load");
-          //   } else if (target.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
-          //     this.updateStateCode(StateCode.LOAD, "load");
-          //   }
-          // }
         }
       },
       load: {
