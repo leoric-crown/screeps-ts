@@ -29,9 +29,9 @@ export interface SpawnerStates extends BaseStructureStates {
 }
 
 class Spawner extends ExtendedStructure implements StatefulStructure {
+  private creepCounts: CreepCounts;
   states: SpawnerStates;
   creepConfigs: CreepConfig[];
-  creepCounts: CreepCounts;
   nextRequest: CreepConfig | undefined;
   logged: boolean;
   startedSpawn: boolean;

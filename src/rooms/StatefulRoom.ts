@@ -1,7 +1,7 @@
+import { RoomState } from "types/States";
 import CreepManager from "creeps/CreepManager";
 import creepConfigs, { CreepConfig } from "creeps/creeps.config";
-import Spawner from "structures/classes/Spawner";
-import StructureManager from "../structures/StructureManager";
+import StructureManager, { ManagedStructure } from "../structures/StructureManager";
 import ExtendedRoom from "./ExtendedRoom";
 
 export enum RoomStateCode {
@@ -9,33 +9,46 @@ export enum RoomStateCode {
 }
 
 class StatefulRoom extends ExtendedRoom {
-  rcl: number;
-
-  spawner: Spawner | undefined;
   creepManager: CreepManager;
   structureManager: StructureManager;
   creepConfigs: CreepConfig[];
+  // states: RoomState
+  rcl: number;
+  activeSources: Source[];
 
-  //   structuresToFill: ManagedStructure[];
-  //   buildQueue: ConstructionSite[];
+  // Energy management
+  minAvailableEnergy: number;
+  supplyQueue: ManagedStructure[];
+  buildQueue: ConstructionSite[];
+  repairQueue: Structure[];
+
+  // Defense
+  underAttack: boolean;
+  attackTargets: Creep[];
 
   run: () => void;
-  transition: () => void;
 
   constructor(room: Room, username?: string) {
     super(room, username);
-    this.rcl = room.controller?.level || 0;
-    this.spawner = this.spawns.length > 0 ? new Spawner(this.spawns[0], this) : undefined;
     this.creepManager = new CreepManager(this);
     this.structureManager = new StructureManager(this);
     this.creepConfigs = creepConfigs;
+
+    this.rcl = room.controller?.level || 0;
+    this.activeSources = this.sources.filter(source => source.energy > 0);
+
+    this.minAvailableEnergy = 650;
+    this.supplyQueue = this.structuresToFill;
+    this.buildQueue = this.buildables;
+    this.repairQueue = this.damagedStructures;
+
+    this.underAttack = this.hostileCreeps.length > 0;
+    this.attackTargets = this.hostileCreeps;
 
     this.run = () => {
       this.structureManager.run();
       this.creepManager.run();
     };
-
-    this.transition = () => {};
   }
 }
 

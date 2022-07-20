@@ -20,7 +20,7 @@ class ExtendedRoom extends Room {
   creeps: ExtendedCreep[];
   hostileCreeps: Creep[];
   // Energy
-  minAvailableEnergy: number;
+  // minAvailableEnergy: number;
   structuresToFill: ManagedStructure[];
   containersAndStorage: (StructureContainer | StructureStorage)[];
   energyInStorage: number;
@@ -34,8 +34,6 @@ class ExtendedRoom extends Room {
   containers: StructureContainer[];
   managedStructures: ManagedStructure[];
   damagedStructures: Structure[];
-
-  // refactor room memory to extendedroom
 
   public get memory(): RoomMemory {
     return Memory.myRooms[this.name];
@@ -68,7 +66,6 @@ class ExtendedRoom extends Room {
     // Energy
     this.energyAvailable = room.energyAvailable;
     this.energyCapacityAvailable = room.energyCapacityAvailable;
-    this.minAvailableEnergy = 650;
 
     // Structures
     const { loadables, extensions, containers, managedStructures, damagedStructures } =

@@ -35,3 +35,13 @@ export type StructureState = {
   run: () => void;
   transition: () => void;
 };
+
+export interface BaseRoomState {
+  init: RoomState;
+}
+
+export type RoomState = {
+  code: StateCode;
+  run: () => void;
+  transition: () => void;
+};

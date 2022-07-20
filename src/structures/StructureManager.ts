@@ -11,15 +11,20 @@ class StructureManager {
   room: StatefulRoom;
 
   run: () => void;
+  spawners: StructureSpawn[]
   private runStructures: () => void;
 
   constructor(room: StatefulRoom) {
     this.room = room;
+    const spawners: StructureSpawn[] = []
     const structureList = {} as StatefulStructureList;
     _.forEach(room.managedStructures, structure => {
       structureList[structure.id] = getStatefulStructure(structure, room);
+      structure.structureType === STRUCTURE_SPAWN && spawners.push(structure)
     });
     this.structures = structureList;
+    this.spawners = spawners;
+
 
     this.run = () => {
       // add logging here
