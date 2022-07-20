@@ -5,7 +5,8 @@ import StructureManager, { ManagedStructure } from "../structures/StructureManag
 import ExtendedRoom from "./ExtendedRoom";
 
 export enum RoomStateCode {
-  DEFAULT = 0
+  DEFAULT = 0,
+  DEFENSE = 1
 }
 
 class StatefulRoom extends ExtendedRoom {

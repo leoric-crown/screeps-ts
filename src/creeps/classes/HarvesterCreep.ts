@@ -89,11 +89,11 @@ class HarvesterCreep extends ExtendedCreep {
             );
             if (!target) {
               this.updateStateCode(StateCode.LOAD, "load");
-              return
+              return;
             }
             if (target.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
               this.updateStateCode(StateCode.LOAD, "load");
-              return
+              return;
             }
           }
         }
@@ -103,8 +103,8 @@ class HarvesterCreep extends ExtendedCreep {
         run: this.loadSelfProc,
         transition: (room: StatefulRoom) => {
           if (room.sources[0].energy > 0) {
-            this.updateStateCode(StateCode.HARVEST, "harvest")
-            return
+            this.updateStateCode(StateCode.HARVEST, "harvest");
+            return;
           }
 
           if (this.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
@@ -118,11 +118,13 @@ class HarvesterCreep extends ExtendedCreep {
         transition: (room: StatefulRoom) => {
           if (room.sources[0].energy > 0) {
             this.updateStateCode(StateCode.HARVEST, "harvest");
-            return
-          }
-          else if (this.store.energy === 0) {
+            return;
+          } else if (
+            this.store.energy === 0 &&
+            room.energyAvailable > room.minAvailableEnergy
+          ) {
             this.updateStateCode(StateCode.LOADSELF, "loadSelf");
-          } else if (room.energyInStorage > 0 && room.loadables.length > 0){
+          } else if (room.energyInStorage > 0 && room.loadables.length > 0) {
             this.updateStateCode(StateCode.HAUL, "haul");
           }
         }
