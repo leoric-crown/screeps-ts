@@ -138,13 +138,17 @@ export class ExtendedCreep extends Creep {
       }
     };
     this.loadStructureProc = (room: ExtendedRoom) => {
-      const target = room.managedStructures
+      const targets = room.managedStructures
         .filter(
           structure =>
             structure.store.getFreeCapacity() !== 0 &&
             structure.structureType !== STRUCTURE_SPAWN
         )
-        .sort((a, b) => (a.store.energy < b.store.energy ? -1 : 1))[0];
+        .sort((a, b) => (a.store.energy < b.store.energy ? -1 : 1)).filter((structure, idx, structures) => {
+          return structure.store.energy === structures[0].store.energy
+        });
+
+      const target = this.pos.findClosestByPath(targets);
       if (target && target.store.getFreeCapacity(RESOURCE_ENERGY) >= 50) {
         if (this.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE)
           this.moveTo(target);
