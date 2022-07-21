@@ -1,4 +1,4 @@
-import ExtendedRoom from "../extend/ExtendedRoom";
+import StatefulRoom from "rooms/StatefulRoom";
 
 export enum StateCode {
   INIT = -1,
@@ -11,7 +11,9 @@ export enum StateCode {
   HAUL = 6,
   LOAD_STRUCTURE = 7,
   REPAIR = 8,
-  HEAL = 9
+  HEAL = 9,
+  IDLE = 10,
+  SPAWNING = 11
 }
 
 export interface BaseCreepStates {
@@ -20,8 +22,8 @@ export interface BaseCreepStates {
 
 export type CreepState = {
   code: StateCode;
-  run: (room: ExtendedRoom) => void;
-  transition: (room: ExtendedRoom) => void;
+  run: (structure: StatefulRoom) => void;
+  transition: (structure: StatefulRoom) => void;
 };
 
 export interface BaseStructureStates {
@@ -30,6 +32,16 @@ export interface BaseStructureStates {
 
 export type StructureState = {
   code: StateCode;
-  run: (room: ExtendedRoom) => void;
-  transition: (room: ExtendedRoom) => void;
+  run: () => void;
+  transition: () => void;
+};
+
+export interface BaseRoomState {
+  init: RoomState;
+}
+
+export type RoomState = {
+  code: StateCode;
+  run: () => void;
+  transition: () => void;
 };

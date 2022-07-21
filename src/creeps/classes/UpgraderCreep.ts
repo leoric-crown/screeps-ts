@@ -1,7 +1,7 @@
 import { CreepRole, CreepType } from "../../types/Creeps";
 import { BaseCreepStates, CreepState, StateCode } from "../../types/States";
-import ExtendedRoom from "../../extend/ExtendedRoom";
-import ExtendedCreep from "../../extend/ExtendedCreep";
+import { StatefulRoom } from "../../rooms/";
+import ExtendedCreep from "../ExtendedCreep";
 
 export interface UpgraderRoleStates extends BaseCreepStates {
   harvest: CreepState;
@@ -18,7 +18,7 @@ class UpgraderCreep extends ExtendedCreep {
       init: {
         code: StateCode.INIT,
         run: () => {},
-        transition: (room: ExtendedRoom) => {
+        transition: (room: StatefulRoom) => {
           if (room.energyAvailable > room.minAvailableEnergy) {
             this.updateStateCode(StateCode.LOADSELF, "loadself");
           } else {
@@ -29,7 +29,7 @@ class UpgraderCreep extends ExtendedCreep {
       harvest: {
         code: StateCode.HARVEST,
         run: this.harvestProc,
-        transition: (room: ExtendedRoom) => {
+        transition: (room: StatefulRoom) => {
           if (this.store.getFreeCapacity() === 0) {
             this.updateStateCode(StateCode.UPGRADE, "upgrade");
           }
@@ -38,7 +38,7 @@ class UpgraderCreep extends ExtendedCreep {
       upgrade: {
         code: StateCode.UPGRADE,
         run: this.upgradeProc,
-        transition: (room: ExtendedRoom) => {
+        transition: (room: StatefulRoom) => {
           if (this.store.energy === 0) {
             if (room.energyAvailable > room.minAvailableEnergy) {
               this.updateStateCode(StateCode.LOADSELF, "loadSelf");
@@ -51,7 +51,7 @@ class UpgraderCreep extends ExtendedCreep {
       loadSelf: {
         code: StateCode.LOADSELF,
         run: this.loadSelfProc,
-        transition: (room: ExtendedRoom) => {
+        transition: (room: StatefulRoom) => {
           if (this.store.getFreeCapacity() === 0) {
             this.updateStateCode(StateCode.UPGRADE, "upgrade");
           }

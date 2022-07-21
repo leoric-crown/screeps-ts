@@ -1,7 +1,6 @@
-import { ExtendedCreepList } from "./types/CreepsList";
 import { CreepConfig } from "./creeps/creeps.config";
-import ExtendedRoom from "./extend/ExtendedRoom";
-import ExtendedCreep from "./extend/ExtendedCreep";
+import ExtendedRoom from "./rooms/ExtendedRoom";
+import ExtendedCreep from "./creeps/ExtendedCreep";
 
 const spawner = (room: ExtendedRoom, creepConfigs: CreepConfig[]) => {
   interface CreepCounts {
@@ -15,7 +14,7 @@ const spawner = (room: ExtendedRoom, creepConfigs: CreepConfig[]) => {
       room.creeps,
       (creep: ExtendedCreep) => creep.type === conf.creepType
     ).length;
-    if (creepCounts[conf.creepType] < conf.total && room.energyAvailable >= 300) {
+    if (creepCounts[conf.creepType] < conf.desired && room.energyAvailable >= 300) {
       const bodyAbb = {
         move: "M",
         work: "W",

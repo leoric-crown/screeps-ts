@@ -1,6 +1,7 @@
+import { RoomStateCode } from ".";
 import { getExtendedCreep } from "creeps/classes";
+import ExtendedCreep from "creeps/ExtendedCreep";
 import { ManagedStructure } from "structures/StructureManager";
-import { ExtendedCreepList } from "types/CreepsList";
 
 export type LoadableStructure =
   | StructureSpawn
@@ -8,37 +9,71 @@ export type LoadableStructure =
   | StructureContainer
   | StructureStorage;
 
+export interface RoomMemory {
+  state?: RoomStateCode;
+}
+
 class ExtendedRoom extends Room {
-  creeps: ExtendedCreepList;
+  // Player
+  username: string | undefined;
+  // Creeps
+  creeps: ExtendedCreep[];
+  hostileCreeps: Creep[];
+  // Energy
+  // minAvailableEnergy: number;
+  structuresToFill: ManagedStructure[];
+  containersAndStorage: (StructureContainer | StructureStorage)[];
+  energyInStorage: number;
+  // Structures
   spawns: StructureSpawn[];
   sources: Source[];
+  controller: StructureController | undefined;
   buildables: ConstructionSite[];
   loadables: LoadableStructure[];
   extensions: StructureExtension[];
   containers: StructureContainer[];
   managedStructures: ManagedStructure[];
   damagedStructures: Structure[];
-  minAvailableEnergy: number;
 
-  structuresToFill: ManagedStructure[];
-  containersAndStorage: (StructureContainer | StructureStorage)[];
-  energyInStorage: number;
+  public get memory(): RoomMemory {
+    return Memory.myRooms[this.name];
+  }
+  public set memory(value: RoomMemory) {
+    Memory.myRooms[this.name] = value;
+  }
 
-  constructor(room: Room) {
+  constructor(room: Room, username?: string) {
     super(room.name);
-    this.creeps = room.find(FIND_MY_CREEPS).reduce((memo, creep) => {
-      memo[creep.name] = getExtendedCreep(creep, creep.memory.type, creep.memory.role);
-      return memo;
-    }, {} as ExtendedCreepList);
+
+    // Player
+    this.username = username;
+
+    // Creeps
+    const { creeps, hostileCreeps } = room.find(FIND_CREEPS).reduce(
+      (memo, creep) => {
+        if (creep.owner.username === this.username) {
+          memo.creeps.push(getExtendedCreep(creep, creep.memory.type, creep.memory.role));
+        } else {
+          memo.hostileCreeps.push(creep);
+        }
+        return memo;
+      },
+      { creeps: [] as ExtendedCreep[], hostileCreeps: [] as Creep[] }
+    );
+    this.creeps = creeps;
+    this.hostileCreeps = hostileCreeps;
+
+    // Energy
     this.energyAvailable = room.energyAvailable;
     this.energyCapacityAvailable = room.energyCapacityAvailable;
-    this.minAvailableEnergy = 650;
+
+    // Structures
+    const { loadables, extensions, containers, managedStructures, damagedStructures } =
+      this.getStructureLists(room);
     this.spawns = room.find(FIND_MY_SPAWNS);
     this.sources = room.find(FIND_SOURCES);
     this.controller = room.controller || undefined;
     this.buildables = room.find(FIND_CONSTRUCTION_SITES);
-    const { loadables, extensions, containers, managedStructures, damagedStructures } =
-      this.getStructureLists(room);
     this.loadables = loadables;
     this.extensions = extensions;
     this.containers = containers;
@@ -93,6 +128,7 @@ const isManaged = (structure: AnyStructure) => {
   switch (structure.structureType) {
     case STRUCTURE_TOWER:
     case STRUCTURE_LINK:
+    case STRUCTURE_SPAWN:
       return true;
     default:
       return false;

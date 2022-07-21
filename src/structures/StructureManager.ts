@@ -1,25 +1,30 @@
-import ExtendedRoom from "../extend/ExtendedRoom";
-import ExtendedStructure from "extend/ExtendedStructure";
-import { ExtendedStructureList } from "../types/CreepsList";
+import StatefulRoom from "../rooms/StatefulRoom";
+import { StatefulStructureList } from "../types/CreepsList";
 import { StateCode, StructureState } from "types/States";
-import { getExtendedStructure } from "./classes";
+import { StatefulStructure } from "./ExtendedStructure";
+import { getStatefulStructure } from "./classes";
 
-export type ManagedStructure = StructureTower | StructureLink;
+export type ManagedStructure = StructureSpawn | StructureTower | StructureLink;
 
 class StructureManager {
-  structures: ExtendedStructureList;
-  room: ExtendedRoom;
+  structures: StatefulStructureList;
+  room: StatefulRoom;
 
   run: () => void;
+  spawners: StructureSpawn[]
   private runStructures: () => void;
 
-  constructor(room: ExtendedRoom) {
+  constructor(room: StatefulRoom) {
     this.room = room;
-    const structureList = {} as ExtendedStructureList;
+    const spawners: StructureSpawn[] = []
+    const structureList = {} as StatefulStructureList;
     _.forEach(room.managedStructures, structure => {
-      structureList[structure.id] = getExtendedStructure(structure, room);
+      structureList[structure.id] = getStatefulStructure(structure, room);
+      structure.structureType === STRUCTURE_SPAWN && spawners.push(structure)
     });
     this.structures = structureList;
+    this.spawners = spawners;
+
 
     this.run = () => {
       // add logging here
@@ -33,8 +38,9 @@ class StructureManager {
         const structureStates = Object(structure.states);
         for (let state in structureStates) {
           if (structure.memory.state === structureStates[state].code) {
-            (structureStates[state] as StructureState).run(room);
-            (structureStates[state] as StructureState).transition(room);
+            const stateToRun = structureStates[state] as StructureState;
+            stateToRun.run();
+            stateToRun.transition();
           }
         }
       }
@@ -42,7 +48,7 @@ class StructureManager {
   }
 }
 
-const initMemory = (structure: ExtendedStructure) => {
+const initMemory = (structure: StatefulStructure) => {
   !Object(structure.memory).hasOwnProperty("state") &&
     (structure.memory.state = structure.states?.init.code as StateCode);
 

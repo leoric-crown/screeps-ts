@@ -1,12 +1,7 @@
 import { CreepRole, CreepType } from "./types/Creeps";
 import { ErrorMapper } from "utils/ErrorMapper";
-import ExtendedRoom from "./extend/ExtendedRoom";
-import spawner from "./spawner";
-import creepConfigs from "./creeps/creeps.config";
-import CreepManager from "./creeps/CreepManager";
-import StructureManager from "./structures/StructureManager";
-import ExtendedStructure, { StructureMemory } from "extend/ExtendedStructure";
-import { CreepTarget } from "extend/ExtendedCreep";
+import { StructureMemory } from "./structures/ExtendedStructure";
+import { StatefulRoom, RoomMemory } from "./rooms/.";
 
 declare global {
   /*
@@ -21,8 +16,11 @@ declare global {
   interface Memory {
     uuid: number;
     log: any;
-    structure: {
+    structures: {
       [structureId: string]: StructureMemory;
+    };
+    myRooms: {
+      [roomName: string]: RoomMemory;
     };
   }
 
@@ -50,17 +48,12 @@ export const loop = ErrorMapper.wrapLoop(() => {
     `-----------------------start of game tick ${Game.time}-----------------------`
   );
 
-  const room = new ExtendedRoom(Game.rooms["W8N6"]);
-  Memory.log = { ...Memory.log, room };
-  Memory.structure = {};
+  // Initialize custom structures memory
+  if (Memory.structures === undefined) Memory.structures = {};
 
-  const creepManager = new CreepManager(room);
-  spawner(room, creepConfigs);
-  const structureManager = new StructureManager(room);
-  // Run all creeps in the room
-  creepManager.run();
-  // Run all managed structures in the room
-  structureManager.run();
+  const username = "leoric-crown";
+  const room = new StatefulRoom(Game.rooms["W8N6"], username);
+  room.run();
 
   // Automatically delete memory of missing creeps
   for (const name in Memory.creeps) {
@@ -69,9 +62,10 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
   }
 
-  for (const id in Memory.structure) {
+  // Automatically delete memory of missing structures
+  for (const id in Memory.structures) {
     if (!(id in Game.structures)) {
-      delete Memory.structure[id];
+      delete Memory.structures[id];
     }
   }
 

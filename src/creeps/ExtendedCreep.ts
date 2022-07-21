@@ -1,7 +1,8 @@
 import { CreepRole, CreepType } from "../types/Creeps";
 import { StateCode } from "types/States";
 import { CreepRoleStates } from "creeps/classes";
-import ExtendedRoom, { LoadableStructure } from "./ExtendedRoom";
+import { LoadableStructure } from "../rooms/ExtendedRoom";
+import { StatefulRoom } from "rooms";
 
 export type CreepTarget = Creep | ConstructionSite | Structure;
 
@@ -36,13 +37,13 @@ export class ExtendedCreep extends Creep {
 
   // findTarget: (list: CreepTarget[], filter: any) => CreepTarget
 
-  harvestProc: (room: ExtendedRoom) => void;
-  upgradeProc: (room: ExtendedRoom) => void;
-  loadProc: (room: ExtendedRoom, filter?: (structure: Structure) => boolean) => void;
-  loadSelfProc: (room: ExtendedRoom) => void;
-  buildProc: (room: ExtendedRoom) => void;
-  haulProc: (room: ExtendedRoom) => void;
-  loadStructureProc: (room: ExtendedRoom) => void;
+  harvestProc: (room: StatefulRoom) => void;
+  upgradeProc: (room: StatefulRoom) => void;
+  loadProc: (room: StatefulRoom, filter?: (structure: Structure) => boolean) => void;
+  loadSelfProc: (room: StatefulRoom) => void;
+  buildProc: (room: StatefulRoom) => void;
+  haulProc: (room: StatefulRoom) => void;
+  loadStructureProc: (room: StatefulRoom) => void;
 
   constructor(creep: Creep) {
     super(creep.id);
@@ -53,14 +54,15 @@ export class ExtendedCreep extends Creep {
       if (message) this.say(message);
     };
 
-    this.harvestProc = (room: ExtendedRoom) => {
-      if (this.harvest(room.sources[0]) === ERR_NOT_IN_RANGE) {
-        this.moveTo(room.sources[0], {
+    this.harvestProc = (room: StatefulRoom) => {
+      const targetSource = this.pos.findClosestByPath(room.activeSources);
+      if (targetSource && this.harvest(targetSource) === ERR_NOT_IN_RANGE) {
+        this.moveTo(targetSource, {
           visualizePathStyle: { stroke: "#ffffff" }
         });
       }
     };
-    this.upgradeProc = (room: ExtendedRoom) => {
+    this.upgradeProc = (room: StatefulRoom) => {
       if (
         room.controller &&
         this.upgradeController(room.controller) === ERR_NOT_IN_RANGE
@@ -68,13 +70,16 @@ export class ExtendedCreep extends Creep {
         this.moveTo(room.controller);
       }
     };
-    this.loadProc = (room: ExtendedRoom, filter?: (structure: Structure) => boolean) => {
+    this.loadProc = (room: StatefulRoom, filter?: (structure: Structure) => boolean) => {
       const targets = filter ? room.loadables.filter(filter) : room.loadables;
 
-      let target: CreepTarget | undefined = undefined;
+      let target: LoadableStructure | undefined = undefined;
       if (this.memory.target) {
-        const fetchedObject = Game.getObjectById(this.memory.target as Id<CreepTarget>);
-        target = (fetchedObject as CreepTarget) || undefined;
+        const fetchedObject = Game.getObjectById(
+          this.memory.target as Id<LoadableStructure>
+        );
+        target = (fetchedObject as LoadableStructure) || undefined;
+        if (target && target.store.getFreeCapacity() === 0) target = undefined;
       }
 
       if (target == undefined)
@@ -88,17 +93,17 @@ export class ExtendedCreep extends Creep {
         this.memory.target = undefined;
       }
     };
-    this.loadSelfProc = (room: ExtendedRoom) => {
-      const findTarget =
+    this.loadSelfProc = (room: StatefulRoom) => {
+      const target =
         this.pos.findClosestByPath(
           [...room.spawns, ...room.extensions].filter(structure => structure.energy > 0)
         ) || room.spawns[0];
-      const tryWithdraw = this.withdraw(findTarget, RESOURCE_ENERGY);
+      const tryWithdraw = this.withdraw(target, RESOURCE_ENERGY);
       if (tryWithdraw === ERR_NOT_IN_RANGE) {
-        this.moveTo(findTarget);
+        this.moveTo(target);
       }
     };
-    this.buildProc = (room: ExtendedRoom) => {
+    this.buildProc = (room: StatefulRoom) => {
       if (room.buildables.length > 0) {
         const tryBuild = this.build(room.buildables[0]);
         if (tryBuild === ERR_NOT_IN_RANGE) {
@@ -108,11 +113,14 @@ export class ExtendedCreep extends Creep {
         }
       }
     };
-    this.haulProc = (room: ExtendedRoom) => {
-      let target: CreepTarget | undefined = undefined;
+    this.haulProc = (room: StatefulRoom) => {
+      let target: LoadableStructure | undefined = undefined;
       if (this.memory.target) {
-        const fetchedObject = Game.getObjectById(this.memory.target as Id<CreepTarget>);
-        target = (fetchedObject as CreepTarget) || undefined;
+        const fetchedObject = Game.getObjectById(
+          this.memory.target as Id<LoadableStructure>
+        );
+        target = (fetchedObject as LoadableStructure) || undefined;
+        if (target && target.store.getFreeCapacity() === 0) target = undefined;
       }
       if (target == undefined) {
         const findTarget =
@@ -137,10 +145,19 @@ export class ExtendedCreep extends Creep {
         }
       }
     };
-    this.loadStructureProc = (room: ExtendedRoom) => {
-      const target = room.managedStructures.filter(
-        structure => structure.store.getFreeCapacity() !== 0
-      ).sort((a,b) => a.store.energy < b.store.energy ? -1 : 1)[0];
+    this.loadStructureProc = (room: StatefulRoom) => {
+      const targets = room.managedStructures
+        .filter(
+          structure =>
+            structure.store.getFreeCapacity() !== 0 &&
+            structure.structureType !== STRUCTURE_SPAWN
+        )
+        .sort((a, b) => (a.store.energy < b.store.energy ? -1 : 1))
+        .filter((structure, idx, structures) => {
+          return structure.store.energy === structures[0].store.energy;
+        });
+
+      const target = this.pos.findClosestByPath(targets);
       if (target && target.store.getFreeCapacity(RESOURCE_ENERGY) >= 50) {
         if (this.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE)
           this.moveTo(target);
