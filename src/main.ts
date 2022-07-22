@@ -2,7 +2,8 @@ import { ErrorMapper } from "utils/ErrorMapper";
 import { StructureMemory } from "./structures/ExtendedStructure";
 import { getStatefulRoom } from "rooms";
 import log from "utils/log";
-
+//@ts-ignore
+import watcher from "utils/watcher-client"
 //@ts-ignore
 import profiler from "./utils/screeps-profiler";
 //@ts-ignore
@@ -21,6 +22,7 @@ declare global {
   interface Memory {
     uuid: number;
     log: boolean;
+    watch: any;
     structures: {
       [structureId: string]: StructureMemory;
     };
@@ -63,6 +65,7 @@ const baseLoop = () => {
   }
 
   exportStats();
+  watcher();
 
   global.log(`CPU Used this tick: ${Game.cpu.getUsed()}. Bucket: ${Game.cpu.bucket}`);
   global.log(
