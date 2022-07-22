@@ -1,12 +1,12 @@
 import { ErrorMapper } from "utils/ErrorMapper";
 import { StructureMemory } from "./structures/ExtendedStructure";
 import { getStatefulRoom } from "rooms";
+import getLog from "utils/log";
 
 //@ts-ignore
 import profiler from "./utils/screeps-profiler";
 //@ts-ignore
 import exportStats from "utils/screeps-grafana";
-
 
 declare global {
   /*
@@ -20,7 +20,7 @@ declare global {
   // Memory extension samples
   interface Memory {
     uuid: number;
-    log: any;
+    log: boolean;
     structures: {
       [structureId: string]: StructureMemory;
     };
@@ -34,8 +34,11 @@ declare global {
   }
 }
 
+global.log = getLog();
+
 const baseLoop = () => {
-  console.log(
+
+  global.log(
     `-----------------------start of game tick ${Game.time}-----------------------`
   );
 
@@ -61,8 +64,8 @@ const baseLoop = () => {
 
   exportStats();
 
-  console.log(`CPU Used this tick: ${Game.cpu.getUsed()}. Bucket: ${Game.cpu.bucket}`);
-  console.log(
+  global.log(`CPU Used this tick: ${Game.cpu.getUsed()}. Bucket: ${Game.cpu.bucket}`);
+  global.log(
     `------------------------end of game tick ${Game.time}------------------------`
   );
 };
@@ -73,7 +76,7 @@ let _loop;
 if (profiler !== undefined) {
   profiler.enable();
   _loop = () => {
-    profiler.wrap(baseLoop);
+    profiler.wrap(ErrorMapper.wrapLoop(baseLoop));
   };
 } else {
   _loop = ErrorMapper.wrapLoop(baseLoop);

@@ -1,7 +1,6 @@
 // Call this function at the end of your main loop
 
 export default function exportStats() {
-    console.log("[screeps-grafana]: Exporting Stats")
     // Reset stats object
     Memory.stats = {
       gcl: {},

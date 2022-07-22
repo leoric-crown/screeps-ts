@@ -92,7 +92,7 @@ class ExtendedRoom extends Room {
       return memo + structure.store.getUsedCapacity(RESOURCE_ENERGY);
     }, 0);
 
-    console.log(
+    global.log(
       `Room: [room ${this.name}] - numStructuresToFill=${this.structuresToFill.length}, energyInStorage: ${this.energyInStorage}, energyAvailable: ${this.energyAvailable} / ${this.energyCapacityAvailable}`
     );
   }
@@ -111,7 +111,7 @@ class ExtendedRoom extends Room {
       if (structure.hits < structure.hitsMax) damagedStructures.push(structure);
       if (structureType === STRUCTURE_CONTAINER) containers.push(structure);
     });
-    console.log(
+    global.log(
       `Room: [room ${this.name}] - numManagedStructures=${managedStructures.length}, numExtensions=${extensions.length}, numLoadables=${loadables.length}, damagedStructures=${damagedStructures.length}`
     );
 

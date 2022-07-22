@@ -45,8 +45,8 @@ class CreepManager {
         },
         {} as any
       );
-      console.log(`CreepManager: ${this.room} - ${JSON.stringify(currentStatus)}`);
-      console.log(`CreepManager: Total Creeps: ${total}`);
+      global.log(`CreepManager: ${this.room} - ${JSON.stringify(currentStatus)}`);
+      global.log(`CreepManager: Total Creeps: ${total}`);
 
       this.runCreeps();
     };

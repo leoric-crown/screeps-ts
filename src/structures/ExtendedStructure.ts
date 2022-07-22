@@ -35,7 +35,7 @@ class ExtendedStructure extends Structure {
     this.updateStateCode = (code: StateCode, message?: string) => {
       this.memory.state = code;
       if (message)
-        console.log(
+        global.log(
           `Message from ${this.structureType} structure (id: ${this.id}): ${message}`
         );
     };

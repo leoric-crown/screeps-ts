@@ -68,7 +68,7 @@ class Spawner extends ExtendedStructure implements StatefulStructure {
 
             if (this.room.energyAvailable < cost) {
               // tell the room to build up $cost energy for this creep
-              console.log(
+              global.log(
                 `Spawner: ${this.room} - waiting for ${cost} energy to spawn creep of type: ${request.creepType} and role: ${request.role}`
               );
               return;
@@ -91,11 +91,11 @@ class Spawner extends ExtendedStructure implements StatefulStructure {
               });
               if (trySpawn === OK) {
                 this.startedSpawn = true;
-                console.log(
+                global.log(
                   `Spawner: ${this.room} - spawning: ${creepName} of type: ${request.creepType}, role: ${request.role} and cost: ${cost}`
                 );
               } else {
-                console.log(
+                global.log(
                   `Spawner: ${this.room} - failed to spawn creep of type: ${request.creepType}, role: ${request.role} and cost: ${cost} ERROR: ${trySpawn}`
                 );
               }
@@ -115,7 +115,7 @@ class Spawner extends ExtendedStructure implements StatefulStructure {
           // Avoid an extra line in console if we started spawning during this tick
           if (!this.startedSpawn && this.memory.spawningCreep) {
             const { type, role, cost } = this.memory.spawningCreep;
-            console.log(
+            global.log(
               `Spawner: ${this.room} - currently spawning a creep of type: ${type}, role: ${role}, and cost: ${cost} `
             );
           }
@@ -133,11 +133,11 @@ class Spawner extends ExtendedStructure implements StatefulStructure {
 
   log = () => {
     if (!this.logged) {
-      console.log(
+      global.log(
         `Spawner: ${this.room} - creepCounts: ${JSON.stringify(this.creepCounts)}`
       );
       !this.nextRequest &&
-        console.log(
+        global.log(
           `Spawner: ${this.room} - creepCounts satisfied requests, no need to spawn more creeps`
         );
     }
