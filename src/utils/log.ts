@@ -1,4 +1,4 @@
-export default function getLog() {
+const getLog = () =>{
   const log = console.log;
   const myLog = function () {
     const date = new Date();
@@ -23,3 +23,6 @@ export default function getLog() {
   };
   return myLog
 }
+
+const log = getLog();
+export default log;

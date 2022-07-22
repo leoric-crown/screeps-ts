@@ -1,7 +1,7 @@
 import { ErrorMapper } from "utils/ErrorMapper";
 import { StructureMemory } from "./structures/ExtendedStructure";
 import { getStatefulRoom } from "rooms";
-import getLog from "utils/log";
+import log from "utils/log";
 
 //@ts-ignore
 import profiler from "./utils/screeps-profiler";
@@ -34,7 +34,7 @@ declare global {
   }
 }
 
-global.log = getLog();
+global.log = log;
 
 const baseLoop = () => {
 
