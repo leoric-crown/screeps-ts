@@ -1,8 +1,6 @@
-import { CreepState } from "../types/States";
 import { ExtendedCreepList } from "../types/CreepsList";
-import { CreepType } from "../types/Creeps";
-import StatefulRoom from "../rooms/StatefulRoom";
-import ExtendedCreep from "./ExtendedCreep";
+import ExtendedCreep, { CreepType } from "./ExtendedCreep";
+import { StatefulRoom } from "../rooms/";
 
 class CreepManager {
   creeps: ExtendedCreepList;
@@ -13,8 +11,8 @@ class CreepManager {
 
   constructor(room: StatefulRoom) {
     this.room = room;
-    let creepList = {} as ExtendedCreepList
-    room.creeps.forEach(creep => creepList[creep.name] = creep);
+    let creepList = {} as ExtendedCreepList;
+    room.creeps.forEach(creep => (creepList[creep.name] = creep));
     this.creeps = creepList;
 
     this.getCreeps = (creepType?: CreepType) => {
@@ -54,15 +52,11 @@ class CreepManager {
     };
 
     this.runCreeps = () => {
-      for (let creep of Object.values(this.creeps)) {
-        creep = setMemory(creep);
-        const creepStates = Object(creep.states);
-        for (let state in creepStates) {
-          if (creep.memory.state === creepStates[state].code) {
-            (creepStates[state] as CreepState).run(room);
-            (creepStates[state] as CreepState).transition(room);
-          }
-        }
+      for (let creepName in this.creeps) {
+        const creep = setMemory(this.creeps[creepName]);
+        const state = creep.getState();
+        state.run(room);
+        state.transition(room);
       }
     };
   }

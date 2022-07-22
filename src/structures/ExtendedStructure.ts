@@ -12,7 +12,6 @@ export interface StructureMemory {
 
 export interface StatefulStructure extends ExtendedStructure {
   states: BaseStructureStates;
-  updateStateCode: (code: StateCode, message?: string) => void;
 }
 
 const emptyMemory = {} as StructureMemory;

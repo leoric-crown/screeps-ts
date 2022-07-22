@@ -1,42 +1,42 @@
-import { CreepRole, CreepType } from "../types/Creeps";
-import { StateCode } from "types/States";
-import { CreepRoleStates } from "creeps/classes";
+import { CreepState, StateCode } from "types/States";
+import { CreepRoleStates } from ".";
 import { LoadableStructure } from "../rooms/ExtendedRoom";
 import { StatefulRoom } from "rooms";
+
+declare global {
+  interface CreepMemory {
+    type: CreepType;
+    role: CreepRole;
+    state?: number;
+    target?: Id<_HasId>;
+    room?: Id<_HasId>;
+    working?: boolean;
+  }
+}
+
+export enum CreepType {
+  HARVESTER = "harvester",
+  BUILDER = "builder",
+  UPGRADER = "upgrader",
+  HAULER = "hauler"
+}
+
+export enum CreepRole {
+  HARVESTER = "harvester",
+  UPGRADER = "upgrader",
+  BUILDER = "builder",
+  HAULER = "hauler"
+}
 
 export type CreepTarget = Creep | ConstructionSite | Structure;
 
 export class ExtendedCreep extends Creep {
-  private _type?: CreepType | undefined;
-  public get type(): CreepType | undefined {
-    return this._type;
-  }
-  public set type(value: CreepType | undefined) {
-    this._type = value;
-  }
-
-  private _role?: CreepRole | undefined;
-  public get role(): CreepRole | undefined {
-    return this._role;
-  }
-  public set role(value: CreepRole | undefined) {
-    this._role = value;
-  }
-
-  private _states?: CreepRoleStates | undefined;
-  public get states(): CreepRoleStates | undefined {
-    return this._states;
-  }
-  public set states(value: CreepRoleStates | undefined) {
-    this._states = value;
-  }
-
+  type?: CreepType;
+  role?: CreepRole;
+  states?: CreepRoleStates;
   target?: CreepTarget;
 
   updateStateCode: (code: StateCode, message?: string) => void;
-
-  // findTarget: (list: CreepTarget[], filter: any) => CreepTarget
-
   harvestProc: (room: StatefulRoom) => void;
   upgradeProc: (room: StatefulRoom) => void;
   loadProc: (room: StatefulRoom, filter?: (structure: Structure) => boolean) => void;
@@ -44,6 +44,20 @@ export class ExtendedCreep extends Creep {
   buildProc: (room: StatefulRoom) => void;
   haulProc: (room: StatefulRoom) => void;
   loadStructureProc: (room: StatefulRoom) => void;
+
+  stateCodeMap = () => {
+    const map: { [stateCode: number]: CreepState } = {};
+    if (this.states) Object.entries(this.states).forEach(([name, state]) => {
+      map[state.code] = state;
+    })
+    return map;
+  };
+
+  getState = () => {
+    let state = {} as CreepState;
+    Object(this.memory).hasOwnProperty("state") && (state = this.stateCodeMap()[this.memory.state as number]);
+    return state;
+  };
 
   constructor(creep: Creep) {
     super(creep.id);

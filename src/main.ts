@@ -1,7 +1,12 @@
-import { CreepRole, CreepType } from "./types/Creeps";
 import { ErrorMapper } from "utils/ErrorMapper";
 import { StructureMemory } from "./structures/ExtendedStructure";
-import { StatefulRoom, RoomMemory } from "./rooms/.";
+import { getStatefulRoom } from "rooms";
+
+//@ts-ignore
+import profiler from "./utils/screeps-profiler";
+//@ts-ignore
+import exportStats from "utils/screeps-grafana";
+
 
 declare global {
   /*
@@ -19,18 +24,6 @@ declare global {
     structures: {
       [structureId: string]: StructureMemory;
     };
-    myRooms: {
-      [roomName: string]: RoomMemory;
-    };
-  }
-
-  interface CreepMemory {
-    type: CreepType;
-    role: CreepRole;
-    state?: number;
-    target?: Id<_HasId>;
-    room?: Id<_HasId>;
-    working?: boolean;
   }
 
   // Syntax for adding properties to `global` (ex "global.log")
@@ -41,18 +34,15 @@ declare global {
   }
 }
 
-// When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
-// This utility uses source maps to get the line numbers and file names of the original, TS source code
-export const loop = ErrorMapper.wrapLoop(() => {
+const baseLoop = () => {
   console.log(
     `-----------------------start of game tick ${Game.time}-----------------------`
   );
 
   // Initialize custom structures memory
   if (Memory.structures === undefined) Memory.structures = {};
-
   const username = "leoric-crown";
-  const room = new StatefulRoom(Game.rooms["W8N6"], username);
+  const room = getStatefulRoom("W8N6", username);
   room.run();
 
   // Automatically delete memory of missing creeps
@@ -69,8 +59,24 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
   }
 
-  console.log(`CPU Used this tick: ${Game.cpu.getUsed()}`);
+  exportStats();
+
+  console.log(`CPU Used this tick: ${Game.cpu.getUsed()}. Bucket: ${Game.cpu.bucket}`);
   console.log(
     `------------------------end of game tick ${Game.time}------------------------`
   );
-});
+};
+
+// When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
+// This utility uses source maps to get the line numbers and file names of the original, TS source code
+let _loop;
+if (profiler !== undefined) {
+  profiler.enable();
+  _loop = () => {
+    profiler.wrap(baseLoop);
+  };
+} else {
+  _loop = ErrorMapper.wrapLoop(baseLoop);
+}
+
+export const loop = _loop;

@@ -22,8 +22,8 @@ export interface BaseCreepStates {
 
 export type CreepState = {
   code: StateCode;
-  run: (structure: StatefulRoom) => void;
-  transition: (structure: StatefulRoom) => void;
+  run: (room: StatefulRoom) => void;
+  transition: (room: StatefulRoom) => void;
 };
 
 export interface BaseStructureStates {

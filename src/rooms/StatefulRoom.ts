@@ -9,7 +9,7 @@ export enum RoomStateCode {
   DEFENSE = 1
 }
 
-class StatefulRoom extends ExtendedRoom {
+class StatefulRoom extends ExtendedRoom implements Room {
   creepManager: CreepManager;
   structureManager: StructureManager;
   creepConfigs: CreepConfig[];

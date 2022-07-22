@@ -1,7 +1,8 @@
 import { RoomStateCode } from ".";
-import { getExtendedCreep } from "creeps/classes";
-import ExtendedCreep from "creeps/ExtendedCreep";
+import { ExtendedCreep, getExtendedCreep } from "creeps";
 import { ManagedStructure } from "structures/StructureManager";
+//@ts-ignore
+import profiler from "../utils/screeps-profiler"
 
 export type LoadableStructure =
   | StructureSpawn
@@ -9,8 +10,10 @@ export type LoadableStructure =
   | StructureContainer
   | StructureStorage;
 
-export interface RoomMemory {
-  state?: RoomStateCode;
+declare global {
+  interface RoomMemory {
+    state?: RoomStateCode;
+  }
 }
 
 class ExtendedRoom extends Room {
@@ -20,7 +23,6 @@ class ExtendedRoom extends Room {
   creeps: ExtendedCreep[];
   hostileCreeps: Creep[];
   // Energy
-  // minAvailableEnergy: number;
   structuresToFill: ManagedStructure[];
   containersAndStorage: (StructureContainer | StructureStorage)[];
   energyInStorage: number;
@@ -35,16 +37,9 @@ class ExtendedRoom extends Room {
   managedStructures: ManagedStructure[];
   damagedStructures: Structure[];
 
-  public get memory(): RoomMemory {
-    return Memory.myRooms[this.name];
-  }
-  public set memory(value: RoomMemory) {
-    Memory.myRooms[this.name] = value;
-  }
-
   constructor(room: Room, username?: string) {
     super(room.name);
-
+    this.memory.state = 0;
     // Player
     this.username = username;
 

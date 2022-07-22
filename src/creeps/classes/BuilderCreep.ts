@@ -1,7 +1,6 @@
-import { CreepRole, CreepType } from "../../types/Creeps";
 import { BaseCreepStates, CreepState, StateCode } from "../../types/States";
 import { StatefulRoom } from "../../rooms/";
-import ExtendedCreep from "../ExtendedCreep";
+import ExtendedCreep, {CreepRole, CreepType} from "../ExtendedCreep";
 
 export interface BuilderRoleStates extends BaseCreepStates {
   build: CreepState;
