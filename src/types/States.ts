@@ -1,5 +1,3 @@
-import StatefulRoom from "rooms/StatefulRoom";
-
 export enum StateCode {
   INIT = -1,
   HARVEST = 0,
@@ -22,19 +20,19 @@ export interface BaseCreepStates {
 
 export type CreepState = {
   code: StateCode;
-  run: (room: StatefulRoom) => void;
-  transition: (room: StatefulRoom) => void;
+  run: (room: Room) => void;
+  transition: (room: Room) => void;
 };
 
-export interface BaseStructureStates {
-  init: StructureState;
-}
+// export interface BaseStructureStates {
+//   init: StructureState;
+// }
 
-export type StructureState = {
-  code: StateCode;
-  run: () => void;
-  transition: () => void;
-};
+// export type StructureState = {
+//   code: StateCode;
+//   run: () => void;
+//   transition: () => void;
+// };
 
 export interface BaseRoomState {
   init: RoomState;

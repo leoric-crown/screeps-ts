@@ -1,5 +1,4 @@
 import { BaseCreepStates, CreepState, StateCode } from "../../types/States";
-import { StatefulRoom, LoadableStructure } from "../../rooms/";
 import ExtendedCreep, {CreepRole, CreepType} from "../ExtendedCreep";
 
 export interface HarvesterRoleStates extends BaseCreepStates {
@@ -19,7 +18,7 @@ class HarvesterCreep extends ExtendedCreep {
       init: {
         code: StateCode.INIT,
         run: () => {},
-        transition: (room: StatefulRoom) => {
+        transition: (room: Room) => {
           if (room.sources[0].energy !== 0) {
             this.updateStateCode(StateCode.HARVEST, "harvest");
           } else if (room.energyAvailable >= room.minAvailableEnergy) {
@@ -32,7 +31,7 @@ class HarvesterCreep extends ExtendedCreep {
       harvest: {
         code: StateCode.HARVEST,
         run: this.harvestProc,
-        transition: (room: StatefulRoom) => {
+        transition: (room: Room) => {
           if (
             this.store.energy === this.store.getCapacity() ||
             room.sources[0].energy === 0
@@ -44,8 +43,8 @@ class HarvesterCreep extends ExtendedCreep {
 
       load: {
         code: StateCode.LOAD,
-        run: (room: StatefulRoom) => {
-          const haulersInRoom = _.find(room.creeps, creep => {
+        run: (room: Room) => {
+          const haulersInRoom = _.find(room.creeps.mine, creep => {
             return creep.memory.role === CreepRole.HAULER;
           });
           if (room.energyAvailable < room.minAvailableEnergy && !haulersInRoom) {
@@ -64,7 +63,7 @@ class HarvesterCreep extends ExtendedCreep {
             }
           }
         },
-        transition: (room: StatefulRoom) => {
+        transition: (room: Room) => {
           if (this.store.energy === 0 || room.loadables[0] === undefined) {
             if (room.sources[0].energy > 0) {
               this.updateStateCode(StateCode.HARVEST, "harvest");
@@ -79,7 +78,7 @@ class HarvesterCreep extends ExtendedCreep {
       haul: {
         code: StateCode.HAUL,
         run: this.haulProc,
-        transition: (room: StatefulRoom) => {
+        transition: (room: Room) => {
           if (this.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
             this.updateStateCode(StateCode.LOAD, "load");
           } else {
@@ -100,7 +99,7 @@ class HarvesterCreep extends ExtendedCreep {
       loadSelf: {
         code: StateCode.LOADSELF,
         run: this.loadSelfProc,
-        transition: (room: StatefulRoom) => {
+        transition: (room: Room) => {
           if (room.sources[0].energy > 0) {
             this.updateStateCode(StateCode.HARVEST, "harvest");
             return;
@@ -114,7 +113,7 @@ class HarvesterCreep extends ExtendedCreep {
       upgrade: {
         code: StateCode.UPGRADE,
         run: this.upgradeProc,
-        transition: (room: StatefulRoom) => {
+        transition: (room: Room) => {
           if (room.sources[0].energy > 0) {
             this.updateStateCode(StateCode.HARVEST, "harvest");
             return;

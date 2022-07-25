@@ -12,13 +12,13 @@ const creepConfigs: CreepConfig[] = [
   {
     creepType: CreepType.HARVESTER,
     role: CreepRole.HARVESTER,
-    desired: 3,
+    desired: 2,
     bodies: [WORK, WORK, CARRY, MOVE]
   },
   {
     creepType: CreepType.HAULER,
     role: CreepRole.HAULER,
-    desired: 2,
+    desired: 1,
     bodies: [WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE]
   },
   {

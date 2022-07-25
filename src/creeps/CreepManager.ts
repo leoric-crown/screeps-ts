@@ -1,18 +1,21 @@
 import { ExtendedCreepList } from "../types/CreepsList";
 import ExtendedCreep, { CreepType } from "./ExtendedCreep";
-import { StatefulRoom } from "../rooms/";
+//@ts-ignore
+import profiler from "../utils/screeps-profiler";
 
 class CreepManager {
+  room: Room;
   creeps: ExtendedCreepList;
-  room: StatefulRoom;
   getCreeps: (creepType?: CreepType) => ExtendedCreepList;
   run: (creepType?: CreepType) => void;
   private runCreeps: () => void;
 
-  constructor(room: StatefulRoom) {
+  constructor(room: Room) {
     this.room = room;
     let creepList = {} as ExtendedCreepList;
-    room.creeps.forEach(creep => (creepList[creep.name] = creep));
+    room.creeps.mine.forEach(creep => {
+      creepList[creep.name] = creep;
+    });
     this.creeps = creepList;
 
     this.getCreeps = (creepType?: CreepType) => {
@@ -28,7 +31,7 @@ class CreepManager {
       }
     };
 
-    this.run = (creepType?: CreepType) => {
+    let _run = (creepType?: CreepType) => {
       let total = 0;
       const creeps = creepType ? this.getCreeps(creepType) : this.creeps;
       const currentStatus = _.reduce(
@@ -50,6 +53,8 @@ class CreepManager {
 
       this.runCreeps();
     };
+    if (profiler) _run = profiler.registerFN(_run, "CreepManager.run");
+    this.run = _run;
 
     this.runCreeps = () => {
       for (let creepName in this.creeps) {

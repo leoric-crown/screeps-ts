@@ -1,7 +1,5 @@
 import { CreepState, StateCode } from "types/States";
 import { CreepRoleStates } from ".";
-import { LoadableStructure } from "../rooms/ExtendedRoom";
-import { StatefulRoom } from "rooms";
 
 declare global {
   interface CreepMemory {
@@ -37,13 +35,13 @@ export class ExtendedCreep extends Creep {
   target?: CreepTarget;
 
   updateStateCode: (code: StateCode, message?: string) => void;
-  harvestProc: (room: StatefulRoom) => void;
-  upgradeProc: (room: StatefulRoom) => void;
-  loadProc: (room: StatefulRoom, filter?: (structure: Structure) => boolean) => void;
-  loadSelfProc: (room: StatefulRoom) => void;
-  buildProc: (room: StatefulRoom) => void;
-  haulProc: (room: StatefulRoom) => void;
-  loadStructureProc: (room: StatefulRoom) => void;
+  harvestProc: (room: Room) => void;
+  upgradeProc: (room: Room) => void;
+  loadProc: (room: Room, filter?: (structure: Structure) => boolean) => void;
+  loadSelfProc: (room: Room) => void;
+  buildProc: (room: Room) => void;
+  haulProc: (room: Room) => void;
+  loadStructureProc: (room: Room) => void;
 
   stateCodeMap = () => {
     const map: { [stateCode: number]: CreepState } = {};
@@ -68,15 +66,15 @@ export class ExtendedCreep extends Creep {
       if (message) this.say(message);
     };
 
-    this.harvestProc = (room: StatefulRoom) => {
-      const targetSource = this.pos.findClosestByPath(room.activeSources);
+    this.harvestProc = (room: Room) => {
+      const targetSource = this.pos.findClosestByPath(room.sources.filter(source => source.energy > 0));
       if (targetSource && this.harvest(targetSource) === ERR_NOT_IN_RANGE) {
         this.moveTo(targetSource, {
           visualizePathStyle: { stroke: "#ffffff" }
         });
       }
     };
-    this.upgradeProc = (room: StatefulRoom) => {
+    this.upgradeProc = (room: Room) => {
       if (
         room.controller &&
         this.upgradeController(room.controller) === ERR_NOT_IN_RANGE
@@ -84,7 +82,7 @@ export class ExtendedCreep extends Creep {
         this.moveTo(room.controller);
       }
     };
-    this.loadProc = (room: StatefulRoom, filter?: (structure: Structure) => boolean) => {
+    this.loadProc = (room: Room, filter?: (structure: Structure) => boolean) => {
       const targets = filter ? room.loadables.filter(filter) : room.loadables;
 
       let target: LoadableStructure | undefined = undefined;
@@ -107,7 +105,7 @@ export class ExtendedCreep extends Creep {
         this.memory.target = undefined;
       }
     };
-    this.loadSelfProc = (room: StatefulRoom) => {
+    this.loadSelfProc = (room: Room) => {
       const target =
         this.pos.findClosestByPath(
           [...room.spawns, ...room.extensions].filter(structure => structure.energy > 0)
@@ -117,7 +115,7 @@ export class ExtendedCreep extends Creep {
         this.moveTo(target);
       }
     };
-    this.buildProc = (room: StatefulRoom) => {
+    this.buildProc = (room: Room) => {
       if (room.buildables.length > 0) {
         const tryBuild = this.build(room.buildables[0]);
         if (tryBuild === ERR_NOT_IN_RANGE) {
@@ -127,7 +125,7 @@ export class ExtendedCreep extends Creep {
         }
       }
     };
-    this.haulProc = (room: StatefulRoom) => {
+    this.haulProc = (room: Room) => {
       let target: LoadableStructure | undefined = undefined;
       if (this.memory.target) {
         const fetchedObject = Game.getObjectById(
@@ -159,7 +157,7 @@ export class ExtendedCreep extends Creep {
         }
       }
     };
-    this.loadStructureProc = (room: StatefulRoom) => {
+    this.loadStructureProc = (room: Room) => {
       const targets = room.managedStructures
         .filter(
           structure =>

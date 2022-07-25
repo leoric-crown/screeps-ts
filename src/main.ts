@@ -1,9 +1,11 @@
 import { ErrorMapper } from "utils/ErrorMapper";
-import { StructureMemory } from "./structures/ExtendedStructure";
-import { getStatefulRoom } from "rooms";
+import extendRoom from "./rooms/extend.room";
+import extendStructure from "./structures/extend.structure";
+import getStatefulRoom from "./rooms/StatefulRoom";
+
 import log from "utils/log";
 //@ts-ignore
-import watcher from "utils/watcher-client"
+import watcher from "utils/watcher-client";
 //@ts-ignore
 import profiler from "./utils/screeps-profiler";
 //@ts-ignore
@@ -31,24 +33,33 @@ declare global {
   // Syntax for adding properties to `global` (ex "global.log")
   namespace NodeJS {
     interface Global {
+      player: string;
       log: any;
     }
   }
 }
 
+global.player = "leoric-crown";
 global.log = log;
+// Extend Room prototype
+extendRoom();
+extendStructure();
 
 const baseLoop = () => {
-
   global.log(
     `-----------------------start of game tick ${Game.time}-----------------------`
   );
 
   // Initialize custom structures memory
-  if (Memory.structures === undefined) Memory.structures = {};
-  const username = "leoric-crown";
-  const room = getStatefulRoom("W8N6", username);
-  room.run();
+  Memory.structures = Memory.structures || {} as StructureMemory
+
+
+  const stateful = getStatefulRoom(Game.rooms["W8N6"]);
+  stateful.run();
+
+  // const username = "leoric-crown";
+  // const room = getStatefulRoom("W8N6", username);
+  // room.run();
 
   // Automatically delete memory of missing creeps
   for (const name in Memory.creeps) {
