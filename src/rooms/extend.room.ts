@@ -1,5 +1,3 @@
-import { ExtendedCreep, getExtendedCreep } from "creeps";
-
 type DamagedStructures = {
   roads: StructureRoad[];
   defenses: (StructureWall | StructureRampart)[];
@@ -18,12 +16,12 @@ declare global {
     owner: string | undefined;
 
     creeps: {
-      mine: ExtendedCreep[];
-      hostile: ExtendedCreep[];
+      mine: Creep[];
+      hostile: Creep[];
     };
     damagedCreeps: {
-      mine: ExtendedCreep[];
-      hostile: ExtendedCreep[];
+      mine: Creep[];
+      hostile: Creep[];
     };
 
     spawns: StructureSpawn[];
@@ -70,9 +68,9 @@ const extendRoom = function () {
       if (!this._creeps) {
         this._creeps = getCreeps(this.find(FIND_CREEPS));
       }
-      return this._creeps as { mine: ExtendedCreep[]; hostile: ExtendedCreep[] };
+      return this._creeps as { mine: Creep[]; hostile: Creep[] };
     },
-    set: function (value: { mine: ExtendedCreep[]; hostile: Creep[] }) {
+    set: function (value: { mine: Creep[]; hostile: Creep[] }) {
       this._creeps = value;
     },
     enumerable: true,
@@ -83,9 +81,7 @@ const extendRoom = function () {
     get: function () {
       if (!this._damagedCreeps) {
         this._damagedCreeps = {
-          mine: this.creeps.mine.filter(
-            (creep: ExtendedCreep) => creep.hits < creep.hitsMax
-          ),
+          mine: this.creeps.mine.filter((creep: Creep) => creep.hits < creep.hitsMax),
           hostile: this.creeps.hostile.filter(
             (creep: Creep) => creep.hits < creep.hitsMax
           )
@@ -93,7 +89,7 @@ const extendRoom = function () {
       }
       return this._damagedCreeps;
     },
-    set: function (value: { mine: ExtendedCreep[]; hostile: Creep[] }) {
+    set: function (value: { mine: Creep[]; hostile: Creep[] }) {
       this._damagedCreeps = value;
     },
     enumerable: true,
@@ -320,11 +316,10 @@ const extendRoom = function () {
 };
 
 const getCreeps = (creeps: Creep[]) => {
-  const mine: ExtendedCreep[] = [];
-  const hostile: ExtendedCreep[] = [];
+  const mine: Creep[] = [];
+  const hostile: Creep[] = [];
   creeps.forEach(creep => {
-    creep.owner.username !== global.player && hostile.push(new ExtendedCreep(creep));
-    mine.push(getExtendedCreep(creep, creep.memory.type, creep.memory.role));
+    creep.mine ? mine.push(creep) : hostile.push(creep);
   });
   return {
     mine: mine,

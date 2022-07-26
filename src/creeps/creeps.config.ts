@@ -1,5 +1,4 @@
-import { CreepRole, CreepType } from ".";
-
+import { CreepType, CreepRole } from "../types/States";
 
 export type CreepConfig = {
   creepType: CreepType;

@@ -18,20 +18,24 @@ export interface BaseCreepStates {
   init: CreepState;
 }
 
-export type CreepState = {
-  code: StateCode;
-  run: (room: Room) => void;
-  transition: (room: Room) => void;
-};
+export enum CreepType {
+  HARVESTER = "harvester",
+  BUILDER = "builder",
+  UPGRADER = "upgrader",
+  HAULER = "hauler"
+}
 
-// export interface BaseStructureStates {
-//   init: StructureState;
-// }
+export enum CreepRole {
+  HARVESTER = "harvester",
+  UPGRADER = "upgrader",
+  BUILDER = "builder",
+  HAULER = "hauler"
+}
 
-// export type StructureState = {
+// export type CreepState = {
 //   code: StateCode;
-//   run: () => void;
-//   transition: () => void;
+//   run: (room: Room) => void;
+//   transition: (room: Room) => void;
 // };
 
 export interface BaseRoomState {

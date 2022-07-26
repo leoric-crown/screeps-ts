@@ -28,7 +28,7 @@ declare global {
   }
 }
 
-const getStatefulRoom = (room: Room) => {
+let _getStatefulRoom = (room: Room) => {
   const extend: any = {};
   extend.creepManager = new CreepManager(room);
   extend.structureManager = new StructureManager(room);
@@ -63,5 +63,6 @@ const getStatefulRoom = (room: Room) => {
 
   return _.extend(room, extend) as StatefulRoom;
 };
+if (profiler) _getStatefulRoom = profiler.registerFN(_getStatefulRoom, "getStatefulRoom")
 
-export default getStatefulRoom;
+export default _getStatefulRoom;

@@ -1,30 +1,31 @@
-import { ExtendedCreepList } from "../types/CreepsList";
-import ExtendedCreep, { CreepType } from "./ExtendedCreep";
+import { CreepType } from "types/States";
+import { CreepList } from "../types/CreepsList";
 //@ts-ignore
 import profiler from "../utils/screeps-profiler";
+import { getStatefulCreep } from "./extend.creep";
 
 class CreepManager {
   room: Room;
-  creeps: ExtendedCreepList;
-  getCreeps: (creepType?: CreepType) => ExtendedCreepList;
+  creeps: CreepList;
+  getCreeps: (creepType?: CreepType) => CreepList;
   run: (creepType?: CreepType) => void;
   private runCreeps: () => void;
 
   constructor(room: Room) {
     this.room = room;
-    let creepList = {} as ExtendedCreepList;
+    let creepList = {} as CreepList;
     room.creeps.mine.forEach(creep => {
-      creepList[creep.name] = creep;
+      creepList[creep.name] = getStatefulCreep(creep);
     });
     this.creeps = creepList;
 
     this.getCreeps = (creepType?: CreepType) => {
       if (!creepType) return this.creeps;
       else {
-        const filteredCreeps = {} as ExtendedCreepList;
+        const filteredCreeps = {} as CreepList;
         _.forEach(this.creeps, creep => {
           if (creep.type === creepType) {
-            filteredCreeps[creep.name] = creep;
+            filteredCreeps[creep.name] = getStatefulCreep(creep);
           }
         });
         return filteredCreeps;
@@ -56,21 +57,22 @@ class CreepManager {
     if (profiler) _run = profiler.registerFN(_run, "CreepManager.run");
     this.run = _run;
 
-    this.runCreeps = () => {
+    let _runCreeps = () => {
       for (let creepName in this.creeps) {
-        const creep = setMemory(this.creeps[creepName]);
+        const creep = this.creeps[creepName];
+        setMemory(creep);
         const state = creep.getState();
-        state.run(room);
-        state.transition(room);
+        state.run();
+        state.transition();
       }
     };
+    if (profiler) _runCreeps = profiler.registerFN(_runCreeps, "CreepManager.runCreeps");
+    this.runCreeps = _runCreeps;
   }
 }
-const setMemory = (creep: ExtendedCreep) => {
+const setMemory = (creep: Creep) => {
   !Object(creep.memory).hasOwnProperty("state") &&
     (creep.memory.state = creep.states?.init.code);
-
-  return creep;
 };
 
 export default CreepManager;
