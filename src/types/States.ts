@@ -11,7 +11,25 @@ export enum StateCode {
   REPAIR = 8,
   HEAL = 9,
   IDLE = 10,
-  SPAWNING = 11
+  SPAWNING = 11,
+  WAITING = 12
+}
+
+export const StateNames: {[code: number]: string} = {
+  "-1": "INIT",
+  0: "HARVEST",
+  1: "LOAD",
+  2: "UPGRADE",
+  3: "BUILD",
+  4: "LOADSELF",
+  5: "ATTACK",
+  6: "HAUL",
+  7: "LOAD_STRUCTURE",
+  8: "REPAIR",
+  9: "HEAL",
+  10: "IDLE",
+  11: "SPAWNING",
+  12: "WAITING",
 }
 
 export interface BaseCreepStates {
@@ -31,12 +49,6 @@ export enum CreepRole {
   BUILDER = "builder",
   HAULER = "hauler"
 }
-
-// export type CreepState = {
-//   code: StateCode;
-//   run: (room: Room) => void;
-//   transition: (room: Room) => void;
-// };
 
 export interface BaseRoomState {
   init: RoomState;

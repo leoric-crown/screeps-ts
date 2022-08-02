@@ -2,6 +2,7 @@ import { StateCode, CreepType, CreepRole } from "../types/States";
 import { getBuilderCreep, getHarvesterCreep, getHaulerCreep, getUpgraderCreep } from ".";
 //@ts-ignore
 import profiler from "../utils/screeps-profiler";
+import { values } from "lodash";
 
 declare global {
   interface CreepMemory {
@@ -9,6 +10,7 @@ declare global {
     role: CreepRole;
     state?: number;
     target?: Id<_HasId>;
+    config: number;
   }
 
   type CreepState = {
@@ -35,7 +37,7 @@ declare global {
     states?: CreepRoleStates;
 
     updateStateCode: (code: StateCode, message?: string) => void;
-    getState: () => CreepState;
+    getState: () => { stateName: string | undefined; state: CreepState | undefined };
     harvestProc: () => void;
     upgradeProc: () => void;
     loadProc: (filter?: (structure: Structure) => boolean) => void;
@@ -51,10 +53,13 @@ const creepProcs = {
     const targetSource = this.pos.findClosestByPath(
       this.room.sources.filter(source => source.energy > 0)
     );
-    if (targetSource && this.harvest(targetSource) === ERR_NOT_IN_RANGE) {
-      this.moveTo(targetSource, {
-        visualizePathStyle: { stroke: "#ffffff" }
-      });
+    if (targetSource) {
+      const tryHarvest = this.harvest(targetSource);
+      if (tryHarvest === ERR_NOT_IN_RANGE) {
+        const tryMoveTo = this.moveTo(targetSource, {
+          visualizePathStyle: { stroke: "#ffffff" }
+        });
+      }
     }
   },
   upgradeProc: function (this: Creep) {
@@ -162,15 +167,6 @@ const creepProcs = {
   }
 };
 
-const stateCodeMap = function (creep: Creep) {
-  const map: { [stateCode: number]: CreepState } = {};
-  if (creep.states)
-    Object.values(creep.states).forEach(state => {
-      map[state.code] = state;
-    });
-  return map;
-};
-
 const extendCreep = function () {
   Object.defineProperty(Creep.prototype, "mine", {
     get: function () {
@@ -191,10 +187,17 @@ const extendCreep = function () {
 
   Object.defineProperty(Creep.prototype, "getState", {
     value: function () {
-      let state = {} as CreepState;
-      Object(this.memory).hasOwnProperty("state") &&
-        (state = stateCodeMap(this)[this.memory.state as number]);
-      return state;
+      const stateCode = this.memory.state;
+      let stateName: string | undefined = undefined;
+      const state = _.find(this.states, (value: CreepState, index: string) => {
+        stateName = index;
+        return value.code === stateCode;
+      });
+      if (stateCode !== undefined && state && stateName) {
+        return { stateName, state };
+      } else {
+        return { stateName: undefined, state: undefined };
+      }
     },
     enumerable: true,
     writable: true,
@@ -269,7 +272,7 @@ let _getStatefulCreep = function (creep: Creep) {
   }
 };
 if (profiler)
-  _getStatefulCreep = profiler.registerFN(_getStatefulCreep, "getStatefuleCreep");
+  _getStatefulCreep = profiler.registerFN(_getStatefulCreep, "getStatefulCreep");
 
 export const getStatefulCreep = _getStatefulCreep;
 

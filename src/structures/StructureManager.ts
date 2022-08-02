@@ -9,16 +9,16 @@ declare global {
 
 class StructureManager {
   structures: StatefulStructureList;
-  room: Room;
+  room: StatefulRoom;
 
   run: () => void;
   private runStructures: () => void;
 
-  constructor(room: Room) {
+  constructor(room: StatefulRoom) {
     this.room = room;
     const structureList = {} as StatefulStructureList;
     _.forEach(room.managedStructures, structure => {
-      let stateful = getStatefulStructure(structure);
+      let stateful = getStatefulStructure(structure, room);
       structureList[structure.id] = stateful;
     });
     this.structures = structureList;
@@ -34,15 +34,9 @@ class StructureManager {
     this.runStructures = () => {
       for (let [id, structure] of Object.entries(this.structures)) {
         structure = initMemory(structure);
-        const structureStates = Object(structure.states);
-        if (structure.states)
-          for (let stateName of Object.keys(structure.states)) {
-            const stateToRun = structureStates[stateName] as StructureState;
-            if (structure.memory.state === stateToRun.code) {
-              stateToRun.run();
-              stateToRun.transition();
-            }
-          }
+        const { stateName, state } = structure.getState();
+        state?.run();
+        state?.transition();
       }
     };
   }

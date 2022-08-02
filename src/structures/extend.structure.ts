@@ -1,6 +1,6 @@
 import { StateCode } from "../types/States";
-import extendTower, { TowerStates } from "./classes/Tower";
-import extendSpawn, { SpawnerStates } from "./classes/Spawn";
+import getStatefulTower, { TowerStates } from "./classes/Tower";
+import extendSpawn, { getStatefulSpawn, SpawnerStates } from "./classes/Spawn";
 //@ts-ignore
 import profiler from "../utils/screeps-profiler";
 
@@ -27,6 +27,8 @@ declare global {
 
   interface StatefulStructure extends Structure {
     updateStateCode: (code: StateCode, message?: string) => void;
+    getState: () => { stateName: string | undefined; state: StructureState | undefined };
+
     states?: StructureStates;
   }
 }
@@ -71,16 +73,36 @@ const extendStructure = function () {
     writable: true,
     configurable: true
   });
+
+  Object.defineProperty(Structure.prototype, "getState", {
+    value: function () {
+      const stateCode = this.memory.state;
+      let stateName: string | undefined = undefined;
+      const state = _.find(this.states, (value: StructureState, index: string) => {
+        stateName = index;
+        return value.code === stateCode;
+      });
+      if (stateCode !== undefined && state && stateName) {
+        return { stateName, state };
+      } else {
+        return { stateName: undefined, state: undefined };
+      }
+    },
+    writable: true,
+    configurable: true
+  });
+
+  extendSpawn();
 };
 
-let _getStatefulStructure = function (structure: Structure) {
+let _getStatefulStructure = function (structure: Structure, room: StatefulRoom) {
   let statefulStructure;
   switch (structure.structureType) {
     case STRUCTURE_TOWER:
-      statefulStructure = extendTower(structure as StructureTower);
+      statefulStructure = getStatefulTower(structure as StructureTower);
       break;
     case STRUCTURE_SPAWN:
-      statefulStructure = extendSpawn(structure as StructureSpawn);
+      statefulStructure = getStatefulSpawn(structure as StructureSpawn, room);
       break;
     default:
       throw new Error(

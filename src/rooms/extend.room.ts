@@ -12,6 +12,10 @@ declare global {
     | StructureContainer
     | StructureStorage;
 
+  interface RoomMemory {
+    minAvailableEnergy: number;
+  }
+
   interface Room {
     owner: string | undefined;
 
@@ -26,12 +30,22 @@ declare global {
 
     spawns: StructureSpawn[];
     sources: Source[];
+
     buildables: ConstructionSite[];
+    // structures
     loadables: LoadableStructure[];
     extensions: StructureExtension[];
     containers: StructureContainer[];
     managedStructures: ManagedStructure[];
     damagedStructures: DamagedStructures;
+
+    // structures: {
+    //   loadables: LoadableStructure[];
+    //   extensions: StructureExtension[];
+    //   containers: StructureContainer[];
+    //   managed: ManagedStructure[];
+    //   damaged: DamagedStructures;
+    // }
 
     minAvailableEnergy: number;
 
@@ -43,8 +57,14 @@ declare global {
 
 const extendRoom = function () {
   Object.defineProperty(Room.prototype, "minAvailableEnergy", {
-    value: 650,
-    writable: true,
+    get: function () {
+      this._minAvailableEnergy = this.memory.minAvailableEnergy;
+      if (!this._minAvailableEnergy) this._minAvailableEnergy = 300;
+      return this._minAvailableEnergy;
+    },
+    set: function (value: number) {
+      this.memory.minAvailableEnergy = value;
+    },
     enumerable: true,
     configurable: true
   });

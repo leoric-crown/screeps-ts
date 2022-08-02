@@ -1,5 +1,5 @@
 import CreepManager from "../creeps/CreepManager";
-import creepConfigs, { CreepConfig } from "../creeps/creeps.config";
+import configData, { CreepConfig } from "../creeps/creeps.config";
 import StructureManager from "../structures/StructureManager";
 //@ts-ignore
 import profiler from "../utils/screeps-profiler";
@@ -24,20 +24,30 @@ declare global {
     underAttack: boolean;
     attackTargets: Creep[];
 
+    // State
+    // state: RoomState;
+
     run: () => void;
   }
 }
 
+// class RoomState {
+//   creepConfig: CreepConfig[];
+
+//   constructor (room: Room) {
+//     room.minAvailableEnergy = 650;
+//     this.creepConfig = creepConfigs;
+//   }
+
+// }
+
 let _getStatefulRoom = (room: Room) => {
   const extend: any = {};
   extend.creepManager = new CreepManager(room);
-  extend.structureManager = new StructureManager(room);
-  extend.creepConfigs = creepConfigs;
 
   extend.rcl = room.controller?.level || 0;
   extend.activeSources = room.sources.filter(source => source.energy > 0);
 
-  extend.minAvailableEnergy = 650;
   extend.supplyQueue = room.structuresToFill;
   extend.buildQueue = room.buildables;
   const { roads, defenses, others } = room.damagedStructures;
@@ -46,23 +56,28 @@ let _getStatefulRoom = (room: Room) => {
   extend.underAttack = room.creeps.hostile.length > 0;
   extend.attackTargets = room.creeps.hostile;
 
-  let _run = () => {
+
+  const statefulRoom = _.extend(room, extend) as StatefulRoom;
+  statefulRoom.structureManager = new StructureManager(statefulRoom);
+
+  let _run = function (this: StatefulRoom) {
     global.log(
-      `Room: [room ${room.name}] - numStructuresToFill=${room.structuresToFill.length}, energyInStorage: ${room.energyInStorage}, energyAvailable: ${room.energyAvailable} / ${room.energyCapacityAvailable}`
+      `Room: [room ${this.name}] - numStructuresToFill=${this.structuresToFill.length}, energyInStorage: ${this.energyInStorage}, energyAvailable: ${this.energyAvailable} / ${this.energyCapacityAvailable}, minAvailableEnergy: ${this.memory.minAvailableEnergy}`
     );
     global.log(
-      `Room: [room ${room.name}] - numManagedStructures=${room.managedStructures.length}, numExtensions=${room.extensions.length}, numLoadables=${room.loadables.length}, damagedStructures=${room.damagedStructures.total}`
+      `Room: [room ${this.name}] - numManagedStructures=${this.managedStructures.length}, numExtensions=${this.extensions.length}, numLoadables=${this.loadables.length}, damagedStructures=${this.damagedStructures.total}`
     );
-    extend.structureManager.run();
-    extend.creepManager.run();
+    this.structureManager.run();
+    this.creepManager.run();
   };
+  _run = _run.bind(statefulRoom);
   if (profiler) {
     _run = profiler.registerFN(_run, "Room.run");
   }
-  extend.run = _run;
+  statefulRoom.run = _run;
 
-  return _.extend(room, extend) as StatefulRoom;
+  return statefulRoom;
 };
-if (profiler) _getStatefulRoom = profiler.registerFN(_getStatefulRoom, "getStatefulRoom")
+if (profiler) _getStatefulRoom = profiler.registerFN(_getStatefulRoom, "getStatefulRoom");
 
 export default _getStatefulRoom;

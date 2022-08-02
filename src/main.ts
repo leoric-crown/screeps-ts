@@ -4,7 +4,7 @@ import extendStructure from "./structures/extend.structure";
 import extendCreep from "./creeps/extend.creep";
 import getStatefulRoom from "./rooms/StatefulRoom";
 
-import log from "utils/log";
+import getLog from "utils/log";
 //@ts-ignore
 import watcher from "utils/watcher-client";
 //@ts-ignore
@@ -31,7 +31,7 @@ declare global {
 }
 
 global.player = "leoric-crown";
-global.log = log;
+global.log = getLog();
 // Extend Room prototype
 extendRoom();
 extendStructure();
@@ -43,10 +43,10 @@ const baseLoop = () => {
   );
 
   // Initialize custom structures memory
-  Memory.structures = Memory.structures || {} as StructureMemory
+  Memory.structures = Memory.structures || ({} as StructureMemory);
 
-  const stateful = getStatefulRoom(Game.rooms["W8N6"]);
-  stateful.run();
+  const room = getStatefulRoom(Game.rooms["W8N6"]);
+  room.run();
 
   // Automatically delete memory of missing creeps
   for (const name in Memory.creeps) {

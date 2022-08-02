@@ -1,18 +1,23 @@
-import creepConfigs, { CreepConfig } from "creeps/creeps.config";
-import { StateCode } from "../../types/States";
+import configData, { bodyAbbreviations, CreepConfig } from "creeps/creeps.config";
+import { CreepRole, CreepType, StateCode, StateNames } from "../../types/States";
+
+type NextCreepMemory = {
+  tick?: number;
+  config: number;
+  name?: string;
+  type?: string;
+  role?: string;
+};
 
 declare global {
   interface SpawnMemory extends StructureMemory {
-    spawningCreep?: {
-      type: string;
-      role: string;
-      cost: number;
-    };
+    nextCreep?: NextCreepMemory;
   }
 }
 
 export interface SpawnerStates extends BaseStructureStates {
   idle: StructureState;
+  waiting: StructureState;
   spawning: StructureState;
 }
 
@@ -21,41 +26,88 @@ interface CreepCounts {
 }
 
 interface StatefulSpawn extends StructureSpawn {
-  updateStateCode: (code: StateCode, message?: string) => void;
-  logged: boolean;
-  log: () => void;
-  creepCounts: CreepCounts;
-  startedSpawn: boolean;
-
+  room: StatefulRoom;
   creepConfigs: CreepConfig[];
-  nextRequest: CreepConfig | undefined;
+  creepCounts: CreepCounts;
+  nextCreep: { request: CreepConfig; tick: number | undefined };
+  updateStateCode: (code: StateCode, message?: string) => void;
+  getState: () => { stateName: string | undefined; state: StructureState | undefined };
+
+  log: () => void;
 
   states?: SpawnerStates;
 }
 
-const extendSpawn = function (spawn: StructureSpawn) {
-  const extend: any = {};
-  extend.creepConfigs = creepConfigs;
-  extend.creepCounts = getCreepCounts(spawn.room, extend.creepConfigs);
-  extend.nextRequest = getNextRequest(extend.creepCounts, extend.creepConfigs);
-  extend.logged = false;
-  extend.startedSpawn = false;
+const extendSpawn = function () {
+  Object.defineProperties(StructureSpawn.prototype, {
+    creepConfigs: {
+      value: configData,
+      writable: true
+    },
+    creepCounts: {
+      get: function () {
+        if (!this._creepCounts)
+          this._creepCounts = getCreepCounts(this.room, this.creepConfigs);
+        return this._creepCounts;
+      }
+    },
+    nextCreep: {
+      get: function (this: StatefulSpawn): {
+        request: CreepConfig | undefined;
+        tick: number | undefined;
+      } {
+        const missing = this.creepConfigs.find(request => {
+          return this.creepCounts[request.creepType] < request.desired;
+        });
+        if (missing !== undefined) {
+          this.memory.nextCreep = {
+            config: missing.id,
+            tick: undefined
+          };
+          return { request: missing, tick: undefined };
+        }
 
-  const log = function (this: StatefulSpawn) {
-    if (!this.logged) {
-      global.log(
-        `Spawner: ${this.room} - creepCounts: ${JSON.stringify(this.creepCounts)}`
-      );
-      !this.nextRequest &&
+        const nextCreep = this.memory.nextCreep;
+        if (nextCreep) {
+          const request = this.creepConfigs.find(
+            config => config.id === nextCreep.config
+          );
+          return { request, tick: nextCreep.tick };
+        }
+
+        return { request: undefined, tick: undefined };
+      },
+      set: function (value: {
+        request: CreepConfig | undefined;
+        tick: number | undefined;
+      }) {
+        const { request, tick } = value;
+        request &&
+          tick &&
+          (this.memory.nextCreep = {
+            config: request.id,
+            tick
+          });
+      }
+    },
+    log: {
+      value: function () {
+        const stateCode = this.memory.state;
+
         global.log(
-          `Spawner: ${this.room} - creepCounts satisfied requests, no need to spawn more creeps`
+          `Spawn: ${this.room} - In state: ${
+            StateNames[stateCode]
+          }, creepCounts = ${JSON.stringify(this.creepCounts)}`
         );
+      },
+      writable: true
     }
-    this.logged = true;
-  };
+  });
+};
 
-  const statefulSpawn = _.extend(spawn, extend) as StatefulSpawn
-  statefulSpawn.log = log.bind(statefulSpawn);
+export const getStatefulSpawn = function (spawn: StructureSpawn, room: StatefulRoom) {
+  const extend = { room };
+  const statefulSpawn = _.extend(spawn, extend) as StatefulSpawn;
   statefulSpawn.states = spawnerStates.bind(statefulSpawn)();
 
   return statefulSpawn;
@@ -70,53 +122,98 @@ export const spawnerStates = function (this: StatefulSpawn) {
       },
       transition: () => {
         if (this.spawning) this.updateStateCode(StateCode.SPAWNING);
+        else if (this.nextCreep.request) this.updateStateCode(StateCode.WAITING);
         else this.updateStateCode(StateCode.IDLE);
       }
     },
+
     idle: {
       code: StateCode.IDLE,
       run: () => {
         this.log();
-        if (this.nextRequest) {
-          const request = this.nextRequest;
-          const cost = request.bodies.reduce((count, body) => {
-            return count + BODYPART_COST[body];
-          }, 0);
-
-          if (this.room.energyAvailable < cost) {
-            // tell the room to build up $cost energy for this creep
-            global.log(
-              `Spawner: ${this.room} - waiting for ${cost} energy to spawn creep of type: ${request.creepType} and role: ${request.role}`
-            );
-            return;
-          }
-          const creepName = `${request.bodies
-            .map(body => bodyAbbreviations[body])
-            .join("")}-${Game.time}`;
-          if (!this.spawning) {
-            const { creepType, role } = request;
-            this.memory.spawningCreep = {
-              type: creepType,
-              role,
-              cost
+        if (!this.nextCreep.request) {
+          const { request, ticksToLive: tick } = checkCreepExpiry(this.room.creeps.mine);
+          if (request && tick) {
+            this.nextCreep = {
+              request,
+              tick: tick + Game.time
             };
-            const trySpawn = this.spawnCreep(request.bodies, creepName, {
+            global.log(
+              `Spawn: ${this.room} - Set nextCreep: ${JSON.stringify(
+                this.memory.nextCreep
+              )}`
+            );
+          }
+        }
+      },
+      transition: () => {
+        if (this.nextCreep.request) {
+          const requestCost = this.nextCreep.request.getRequestCost(
+            this.room.energyCapacityAvailable
+          );
+          this.updateStateCode(StateCode.WAITING);
+        }
+      }
+    },
+
+    waiting: {
+      code: StateCode.WAITING,
+      run: () => {
+        this.log();
+        if (this.nextCreep.request) {
+          let logMessage = `Spawn: ${this.room} - `;
+
+          const maxCost = this.room.energyCapacityAvailable;
+          const { request } = this.nextCreep;
+
+          let needSpawn = false;
+          let saveResources = false;
+          const body = request.getScaledBody(maxCost);
+
+          if (this.nextCreep.tick !== undefined) {
+            const timeToSpawn = body.length * 3;
+
+            const ticksToExpire = this.nextCreep.tick - Game.time;
+            if (ticksToExpire > 0) {
+              const remaining = ticksToExpire - timeToSpawn;
+              if (remaining <= 0) needSpawn = true;
+              if (remaining < 400) saveResources = true; // this should probably be smarter (only saving resources within 400 ticks of need to start spawning)
+              logMessage += `${ticksToExpire} ticks until next creep expires. Trying spawn in ${remaining} ticks (spawn duration: ${timeToSpawn})`;
+            }
+          } else {
+            needSpawn = true;
+            saveResources = true;
+            logMessage += `Need to spawn creep now`;
+          }
+
+          const requestCost = request.getRequestCost(maxCost);
+
+          if (saveResources) {
+            this.room.minAvailableEnergy = requestCost;
+          }
+
+          if (needSpawn && !this.spawning) {
+            if (requestCost > this.room.energyAvailable) {
+              logMessage += `: Spawner waiting for ${requestCost} energy.`;
+              global.log(logMessage);
+              return;
+            }
+
+            const creepName = `${body.map(part => bodyAbbreviations[part]).join("")}-${
+              Game.time
+            }`;
+            const trySpawn = this.spawnCreep(body, creepName, {
               memory: {
                 type: request.creepType,
-                role: request.role
+                role: request.role,
+                config: request.id
               }
             });
-            if (trySpawn === OK) {
-              this.startedSpawn = true;
-              global.log(
-                `Spawner: ${this.room} - spawning: ${creepName} of type: ${request.creepType}, role: ${request.role} and cost: ${cost}`
-              );
-            } else {
-              global.log(
-                `Spawner: ${this.room} - failed to spawn creep of type: ${request.creepType}, role: ${request.role} and cost: ${cost} ERROR: ${trySpawn}`
-              );
-            }
+            if (trySpawn !== 0) throw new Error(`Error spawning creep: ${trySpawn}`);
           }
+          global.log(logMessage);
+        } else {
+          throw new Error("Spawner in WAITING state but nextCreep === undefined");
         }
       },
       transition: () => {
@@ -125,27 +222,58 @@ export const spawnerStates = function (this: StatefulSpawn) {
         }
       }
     },
+
     spawning: {
       code: StateCode.SPAWNING,
       run: () => {
         this.log();
-        // Avoid an extra line in console if we started spawning during this tick
-        if (!this.startedSpawn && this.memory.spawningCreep) {
-          const { type, role, cost } = this.memory.spawningCreep;
+        if (this.spawning !== null) {
+          const { creepType: type, role } = this.nextCreep.request;
+          const { name, remainingTime } = this.spawning;
           global.log(
-            `Spawner: ${this.room} - currently spawning a creep of type: ${type}, role: ${role}, and cost: ${cost} `
+            `Spawn: ${this.room} - Spawning creep to replace expiring creep of type ${type} and role: ${role} [${remainingTime} ticks remaining]`
           );
         }
-        return;
       },
       transition: () => {
-        if (!this.spawning) {
-          this.memory.spawningCreep = undefined;
+        if (this.spawning === null) {
+          global.log(
+            `Spawn: ${this.room} - Spawning complete or interrupted. Transitioning to IDLE...`
+          );
+          this.memory.nextCreep = undefined;
           this.updateStateCode(StateCode.IDLE);
         }
       }
     }
   };
+};
+
+const checkCreepExpiry = function (creeps: Creep[]) {
+  let searchResult: {
+    ticksToLive: number | undefined;
+    config: number | undefined;
+  } = {
+    ticksToLive: undefined,
+    config: undefined
+  };
+
+  for (let creep of creeps) {
+    const { type, role, ticksToLive } = creep;
+    const { config } = creep.memory;
+    if (ticksToLive && role && type) {
+      if (!searchResult.ticksToLive) searchResult = { ticksToLive, config };
+      else if (ticksToLive < searchResult.ticksToLive) {
+        searchResult = { ticksToLive, config };
+      }
+    }
+  }
+  let request = undefined;
+  let ticksToLive = undefined;
+  if (searchResult.config !== undefined && searchResult.ticksToLive !== undefined) {
+    request = configData.find(req => req.id === searchResult.config);
+    ticksToLive = searchResult.ticksToLive;
+  }
+  return { request, ticksToLive };
 };
 
 const getCreepCounts = function (room: Room, creepConfigs: CreepConfig[]) {
@@ -156,28 +284,6 @@ const getCreepCounts = function (room: Room, creepConfigs: CreepConfig[]) {
     }).length;
   }
   return creepCounts;
-};
-
-const getNextRequest = function (
-  creepCounts: CreepCounts,
-  creepConfigs: CreepConfig[]
-): CreepConfig | undefined {
-  return creepConfigs.find(request => {
-    return creepCounts[request.creepType] < request.desired;
-  });
-};
-
-const bodyAbbreviations = {
-  move: "M",
-  work: "W",
-  carry: "C"
-  // Constructs: "Co",
-  // Repairs: "R",
-  // ATTACK: "A",
-  // RANGED_ATTACK: "Ra",
-  // HEAL: "H",
-  // TOUGH: "T",
-  // CLAIM: "C"
 };
 
 export default extendSpawn;

@@ -115,7 +115,8 @@ const getHaulerCreep = function (creep: Creep): Creep {
       transition: () => {
         if (
           creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0 ||
-          (creep.room.energyAvailable < creep.room.energyCapacityAvailable * 0.9 && creep.room.energyInStorage > 0)
+          (creep.room.energyAvailable < creep.room.energyCapacityAvailable &&
+            creep.room.energyInStorage > 0)
         ) {
           if (creep.store.energy !== 0) {
             if (creep.room.structuresToFill.length > 0) {

@@ -8,10 +8,12 @@ export interface TowerStates extends BaseStructureStates {
 
 interface StatefulTower extends StructureTower {
   updateStateCode: (code: StateCode, message?: string) => void;
+  getState: () => { stateName: string | undefined; state: StructureState | undefined };
+
   states?: TowerStates;
 }
 
-export const extendTower = function (tower: StructureTower) {
+export const getStatefulTower = function (tower: StructureTower) {
   const extend: any = {};
 
   const statefulTower = _.extend(tower, extend) as StatefulTower;
@@ -115,4 +117,4 @@ const repairProc = function (this: StructureTower) {
   }
 };
 
-export default extendTower;
+export default getStatefulTower;

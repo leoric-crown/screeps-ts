@@ -1,28 +1,34 @@
-const getLog = () =>{
+//@ts-ignore
+import profiler from "./screeps-profiler";
+
+let getLog = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const day = date.getDate();
+  const month = date.getMonth();
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+
+  const localeString = [day, month, hours, minutes, seconds].map(string =>
+    string.toLocaleString("en-US", { minimumIntegerDigits: 2 })
+  );
+
+  const [dayString, monthString, hoursString, minutesString, secondsString] =
+    localeString;
+  const LOG_PREFIX = `${dayString}.${monthString}.${year}/${hoursString}:${minutesString}:${secondsString}`;
+
   const log = console.log;
-  const myLog = function () {
-    const date = new Date();
-    const year = date.getFullYear()
-    const [day, month, hours, minutes, seconds] = [
-      date.getDate(),
-      date.getMonth(),
-      date.getHours(),
-      date.getMinutes(),
-      date.getSeconds()
-    ].map(string =>
-      string.toLocaleString("en-US", {
-        minimumIntegerDigits: 2
-      })
-    );
-    const LOG_PREFIX = `${day}.${month}.${year}/${hours}:${minutes}:${seconds}`;
+  let myLog = function () {
     const args = Array.from(arguments);
     args.unshift(`[${LOG_PREFIX}]: `);
     if (Memory.log) {
       log.apply(console, args as []);
     }
   };
-  return myLog
-}
+  myLog = profiler ? profiler.registerFN(myLog, "myLog") : myLog
+  return myLog;
+};
 
-const log = getLog();
-export default log;
+getLog = profiler ? profiler.registerFN(getLog, "getLog") : getLog;
+export default getLog;

@@ -50,7 +50,7 @@ class CreepManager {
         {} as any
       );
       global.log(`CreepManager: ${this.room} - ${JSON.stringify(currentStatus)}`);
-      global.log(`CreepManager: Total Creeps: ${total}`);
+      global.log(`CreepManager: ${this.room} -  Total Creeps: ${total}`);
 
       this.runCreeps();
     };
@@ -61,9 +61,9 @@ class CreepManager {
       for (let creepName in this.creeps) {
         const creep = this.creeps[creepName];
         setMemory(creep);
-        const state = creep.getState();
-        state.run();
-        state.transition();
+        const { stateName, state} = creep.getState();
+        state?.run();
+        state?.transition();
       }
     };
     if (profiler) _runCreeps = profiler.registerFN(_runCreeps, "CreepManager.runCreeps");

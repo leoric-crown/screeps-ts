@@ -44,13 +44,16 @@ const getHarvesterCreep = function (creep: Creep): Creep {
         const haulersInRoom = _.find(creep.room.creeps.mine, creep => {
           return creep.memory.role === CreepRole.HAULER;
         });
-        if (
-          creep.room.energyAvailable < creep.room.minAvailableEnergy &&
-          !haulersInRoom
-        ) {
-          creep.loadProc(
-            (structure: Structure) => structure.structureType === STRUCTURE_EXTENSION
-          );
+        if (!haulersInRoom) {
+          creep.loadProc((structure: Structure) => {
+            switch (structure.structureType) {
+              case STRUCTURE_SPAWN:
+              case STRUCTURE_EXTENSION:
+                return true;
+              default:
+                return false;
+            }
+          });
         } else {
           if (creep.room.sources[0].energy === 0) {
             creep.loadProc(
