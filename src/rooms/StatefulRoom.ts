@@ -1,6 +1,7 @@
 import CreepManager from "../creeps/CreepManager";
-import configData, { CreepConfig } from "../creeps/creeps.config";
+import { CreepConfig } from "../creeps/creeps.config";
 import StructureManager from "../structures/StructureManager";
+import Rcl1State from "./states/rcl1";
 //@ts-ignore
 import profiler from "../utils/screeps-profiler";
 
@@ -25,21 +26,16 @@ declare global {
     attackTargets: Creep[];
 
     // State
-    // state: RoomState;
+    state: RoomState;
 
     run: () => void;
   }
 }
 
-// class RoomState {
-//   creepConfig: CreepConfig[];
-
-//   constructor (room: Room) {
-//     room.minAvailableEnergy = 650;
-//     this.creepConfig = creepConfigs;
-//   }
-
-// }
+export interface RoomState {
+  creepConfigs: CreepConfig[];
+  //structuresConfig: StructureConfig[];
+}
 
 let _getStatefulRoom = (room: Room) => {
   const extend: any = {};
@@ -56,9 +52,9 @@ let _getStatefulRoom = (room: Room) => {
   extend.underAttack = room.creeps.hostile.length > 0;
   extend.attackTargets = room.creeps.hostile;
 
-
   const statefulRoom = _.extend(room, extend) as StatefulRoom;
   statefulRoom.structureManager = new StructureManager(statefulRoom);
+  statefulRoom.state = new Rcl1State(statefulRoom);
 
   let _run = function (this: StatefulRoom) {
     global.log(

@@ -45,7 +45,7 @@ const baseLoop = () => {
   // Initialize custom structures memory
   Memory.structures = Memory.structures || ({} as StructureMemory);
 
-  const room = getStatefulRoom(Game.rooms["W8N6"]);
+  const room = getStatefulRoom(Game.rooms["W8N3"]);
   room.run();
 
   // Automatically delete memory of missing creeps

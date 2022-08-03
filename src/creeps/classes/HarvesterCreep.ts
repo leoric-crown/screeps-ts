@@ -1,134 +1,97 @@
-import { BaseCreepStates, CreepRole, StateCode } from "../../types/States";
+import { BaseCreepStates, CreepRole, CreepType, StateCode } from "../../types/States";
 
 declare global {
   export interface HarvesterRoleStates extends BaseCreepStates {
+    move: CreepState;
     harvest: CreepState;
+    waiting: CreepState;
     load: CreepState;
-    haul: CreepState;
-    loadSelf: CreepState;
-    upgrade: CreepState;
   }
 }
 
-const getHarvesterCreep = function (creep: Creep): Creep {
+const getHarvesterCreep = function (this: Creep): Creep {
+  const targetSource = this.memory.target
+    ? (Game.getObjectById(this.memory.target) as Source)
+    : undefined;
   const states: HarvesterRoleStates = {
     init: {
       code: StateCode.INIT,
       run: () => {},
       transition: () => {
-        if (creep.room.sources[0].energy !== 0) {
-          creep.updateStateCode(StateCode.HARVEST, "harvest");
-        } else if (creep.room.energyAvailable >= creep.room.minAvailableEnergy) {
-          creep.updateStateCode(StateCode.UPGRADE, "upgrade");
-        } else {
-          creep.updateStateCode(StateCode.HAUL, "haul");
-        }
+        if (targetSource) {
+          if (this.pos.getRangeTo(targetSource) === 1) {
+            this.updateStateCode(StateCode.HARVEST, "harvest");
+          } else {
+            this.updateStateCode(StateCode.MOVE, "move");
+          }
+        } else throw new Error(`Harvester ${this.name} has no target source`);
+      }
+    },
+    move: {
+      code: StateCode.MOVE,
+      run: this.moveProc,
+      transition: () => {
+        if (targetSource) {
+          if (this.pos.getRangeTo(targetSource) === 1)
+            this.updateStateCode(StateCode.HARVEST, "harvest");
+        } else throw new Error(`Harvester ${this.name} has no target source`);
       }
     },
     harvest: {
       code: StateCode.HARVEST,
-      run: creep.harvestProc,
+      run: this.harvestProc,
       transition: () => {
-        if (
-          creep.store.energy === creep.store.getCapacity() ||
-          creep.room.sources[0].energy === 0
-        ) {
-          creep.updateStateCode(StateCode.LOAD, "load");
-        }
+        if (targetSource) {
+          if (this.store.getFreeCapacity() === 0) {
+            const sourceHaulers = this.room.creeps.mine.filter(creep => {
+              return (
+                creep.role === CreepRole.HAULER &&
+                creep.memory.target === this.memory.target
+              );
+            });
+            console.log(
+              "in harvester transition from HARVEST:",
+              JSON.stringify(sourceHaulers.map(a => a.name))
+            );
+            const haulersAvailable = sourceHaulers.length > 0; // store this in CreepManager and add property to creep
+            console.log(
+              "in harvester transition from HARVEST, haulersAvailable: ",
+              haulersAvailable
+            );
+            if (!haulersAvailable) {
+              this.updateStateCode(StateCode.LOAD, "load");
+            } else {
+              this.updateStateCode(StateCode.WAITING, "wait full");
+            }
+          }
+        } else throw new Error(`Harvester ${this.name} has no target source`);
       }
     },
-
-    load: {
-      code: StateCode.LOAD,
+    waiting: {
+      code: StateCode.WAITING,
       run: () => {
-        const haulersInRoom = _.find(creep.room.creeps.mine, creep => {
-          return creep.memory.role === CreepRole.HAULER;
-        });
-        if (!haulersInRoom) {
-          creep.loadProc((structure: Structure) => {
-            switch (structure.structureType) {
-              case STRUCTURE_SPAWN:
-              case STRUCTURE_EXTENSION:
-                return true;
-              default:
-                return false;
-            }
-          });
-        } else {
-          if (creep.room.sources[0].energy === 0) {
-            creep.loadProc(
-              (structure: Structure) => structure.structureType === STRUCTURE_EXTENSION
-            );
-          } else {
-            creep.loadProc();
-          }
-        }
+        this.say("full");
       },
       transition: () => {
-        if (creep.store.energy === 0 || creep.room.loadables[0] === undefined) {
-          if (creep.room.sources[0].energy > 0) {
-            creep.updateStateCode(StateCode.HARVEST, "harvest");
-          } else if (creep.room.energyAvailable >= creep.room.minAvailableEnergy) {
-            creep.updateStateCode(StateCode.UPGRADE, "upgrade");
-          } else {
-            creep.updateStateCode(StateCode.HAUL, "haul");
-          }
+        if (this.store.getFreeCapacity() > 0) {
+          this.updateStateCode(StateCode.HARVEST, "harvest");
         }
       }
     },
-    haul: {
-      code: StateCode.HAUL,
-      run: creep.haulProc,
+    load: {
+      code: StateCode.LOAD,
+      run: this.loadProc,
       transition: () => {
-        if (creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
-          creep.updateStateCode(StateCode.LOAD, "load");
-        } else {
-          const target = Game.getObjectById(creep.memory.target as Id<LoadableStructure>);
-          if (!target) {
-            creep.updateStateCode(StateCode.LOAD, "load");
-            return;
+        if (targetSource) {
+          if (this.store.energy === 0) {
+            this.updateStateCode(StateCode.MOVE, "move");
           }
-          if (target.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
-            creep.updateStateCode(StateCode.LOAD, "load");
-            return;
-          }
-        }
-      }
-    },
-    loadSelf: {
-      code: StateCode.LOADSELF,
-      run: creep.loadSelfProc,
-      transition: () => {
-        if (creep.room.sources[0].energy > 0) {
-          creep.updateStateCode(StateCode.HARVEST, "harvest");
-          return;
-        }
-
-        if (creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
-          creep.updateStateCode(StateCode.UPGRADE, "upgrade");
-        }
-      }
-    },
-    upgrade: {
-      code: StateCode.UPGRADE,
-      run: creep.upgradeProc,
-      transition: () => {
-        if (creep.room.sources[0].energy > 0) {
-          creep.updateStateCode(StateCode.HARVEST, "harvest");
-          return;
-        } else if (
-          creep.store.energy === 0 &&
-          creep.room.energyAvailable > creep.room.minAvailableEnergy
-        ) {
-          creep.updateStateCode(StateCode.LOADSELF, "loadSelf");
-        } else if (creep.room.energyInStorage > 0 && creep.room.loadables.length > 0) {
-          creep.updateStateCode(StateCode.HAUL, "haul");
-        }
+        } else throw new Error(`Harvester ${this.name} has no target source`);
       }
     }
   };
-  creep.states = states;
-  return creep;
+  this.states = states;
+  return this;
 };
 
 export default getHarvesterCreep;

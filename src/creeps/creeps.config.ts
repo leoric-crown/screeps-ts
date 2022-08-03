@@ -1,15 +1,16 @@
 import { forEach } from "lodash";
 import { CreepType, CreepRole } from "../types/States";
 
-type CreepConfigData = {
+export type CreepConfigData = {
   id: number;
   creepType: CreepType;
   role: CreepRole;
   desired: number;
   body: BodyPartConstant[];
   scaleBody?: BodyPartConstant[];
-  bodyOrder: BodyPartConstant[];
+  bodyOrder?: BodyPartConstant[];
   scaleLimit?: number;
+  target?: Id<Creep | AnyStoreStructure | Source>
 };
 
 export interface CreepConfig extends CreepConfigData {
@@ -30,48 +31,7 @@ export const bodyAbbreviations = {
   claim: "C"
 };
 
-const defaultBodyOrder = [WORK, CARRY, MOVE];
-
-const configData: CreepConfigData[] = [
-  {
-    id: 0,
-    creepType: CreepType.HARVESTER,
-    role: CreepRole.HARVESTER,
-    desired: 3, // at least 5 work parts per source
-    body: [WORK, WORK, CARRY, MOVE],
-    scaleBody: [WORK],
-    scaleLimit: 1,
-    bodyOrder: defaultBodyOrder
-  },
-  {
-    id: 1,
-    creepType: CreepType.HAULER,
-    role: CreepRole.HAULER,
-    desired: 1,
-    body: [WORK, CARRY, MOVE],
-    scaleBody: [CARRY, MOVE],
-    bodyOrder: defaultBodyOrder
-  },
-  // remote creeps here
-  {
-    id: 2,
-    creepType: CreepType.BUILDER,
-    role: CreepRole.BUILDER,
-    desired: 1,
-    body: [WORK, CARRY, MOVE, MOVE],
-    scaleBody: [CARRY, MOVE],
-    bodyOrder: defaultBodyOrder
-  },
-  {
-    id: 3,
-    creepType: CreepType.UPGRADER,
-    role: CreepRole.UPGRADER,
-    desired: 1,
-    body: [WORK, CARRY, MOVE],
-    scaleBody: [WORK, CARRY, MOVE],
-    bodyOrder: defaultBodyOrder
-  }
-];
+const defaultBodyOrder: BodyPartConstant[] = [WORK, CARRY, MOVE];
 
 const getBodyCost = function (body: BodyPartConstant[]) {
   return body.reduce((count, part) => {
@@ -112,34 +72,37 @@ const getScaledBodyCount = function (this: CreepConfigData, maxCost: number) {
   );
 };
 
-export const sortBodiesByOrder = (bodyOrder: BodyPartConstant[]) => {
+export const sortBodiesByOrder = function (
+  this: CreepConfigData,
+  bodyOrder?: BodyPartConstant[]
+) {
+  const _bodyOrder = bodyOrder || this.bodyOrder || defaultBodyOrder;
   const filter = (x: BodyPartConstant, y: BodyPartConstant) => {
-    return bodyOrder.indexOf(x) <= bodyOrder.indexOf(y) ? -1 : 1;
+    return _bodyOrder.indexOf(x) <= _bodyOrder.indexOf(y) ? -1 : 1;
   };
 
   return filter;
 };
 
-const creepsConfig = configData.map(configData => {
-  const creepConfig = configData;
-  Object.defineProperties(creepConfig, {
-    // bodyCost: {
-    //   value: getBodyCost
-    // },
-    getRequestCost: {
-      value: getRequestCost.bind(configData)
-    },
-    getScaledBody: {
-      value: (maxCost: number) => {
-        const body = getScaledBody.bind(configData)(maxCost);
-        return body.sort(sortBodiesByOrder(defaultBodyOrder));
+const makeCreepConfigs = (data: CreepConfigData[]) => {
+  return data.map(configData => {
+    const creepConfig = configData;
+    Object.defineProperties(creepConfig, {
+      getRequestCost: {
+        value: getRequestCost.bind(configData)
+      },
+      getScaledBody: {
+        value: (maxCost: number) => {
+          const body = getScaledBody.bind(configData)(maxCost);
+          return body.sort(sortBodiesByOrder.bind(configData)());
+        }
+      },
+      getScaledBodyCount: {
+        value: getScaledBodyCount.bind(configData)
       }
-    },
-    getScaledBodyCount: {
-      value: getScaledBodyCount.bind(configData)
-    }
+    });
+    return creepConfig as CreepConfig;
   });
-  return creepConfig as CreepConfig;
-});
+};
 
-export default creepsConfig;
+export default makeCreepConfigs;

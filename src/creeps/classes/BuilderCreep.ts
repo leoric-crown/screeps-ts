@@ -2,166 +2,103 @@ import { BaseCreepStates, StateCode } from "../../types/States";
 
 declare global {
   interface BuilderRoleStates extends BaseCreepStates {
-    build: CreepState;
-    haul: CreepState;
-    harvest: CreepState;
-    load: CreepState;
     loadSelf: CreepState;
-    loadStructure: CreepState;
+    build: CreepState;
+    load: CreepState;
     upgrade: CreepState;
+    wait: CreepState;
   }
 }
 
-const getBuilderCreep = function (creep: Creep): Creep {
+const getBuilderCreep = function (this: Creep): Creep {
   const states: BuilderRoleStates = {
     init: {
       code: StateCode.INIT,
       run: () => {},
       transition: () => {
         if (
-          creep.room.buildables.length > 0 &&
-          creep.room.energyAvailable > creep.room.minAvailableEnergy
+          this.room.buildables.length > 0 &&
+          this.room.energyAvailable >= this.room.minAvailableEnergy
         ) {
-          creep.updateStateCode(StateCode.LOADSELF, "loadSelf in");
+          this.updateStateCode(StateCode.LOADSELF, "loadSelf in");
         } else {
-          creep.updateStateCode(StateCode.HARVEST, "harvest in");
+          this.updateStateCode(StateCode.WAITING, "init wait");
         }
       }
     },
     loadSelf: {
       code: StateCode.LOADSELF,
-      run: creep.loadSelfProc,
+      run: this.loadSelfProc,
       transition: () => {
-        if (creep.store.getFreeCapacity() === 0) {
-          if (creep.room.buildables.length > 0) {
-            creep.updateStateCode(StateCode.BUILD, "build ls");
-          } else if (creep.room.structuresToFill.length > 0) {
-            creep.updateStateCode(StateCode.LOAD_STRUCTURE, "ls loadStruct");
+        if (this.store.getFreeCapacity() === 0) {
+          if (this.room.buildables.length > 0) {
+            this.updateStateCode(StateCode.BUILD, "build ls");
           } else {
-            creep.updateStateCode(StateCode.UPGRADE, "upgrade ls");
+            this.updateStateCode(StateCode.UPGRADE, "upgrade ls");
           }
-        }
-      }
-    },
-    loadStructure: {
-      code: StateCode.LOAD_STRUCTURE,
-      run: creep.loadStructureProc,
-      transition: () => {
-        if (creep.store.energy === 0) {
-          if (
-            creep.room.buildables.length > 0 &&
-            creep.room.energyAvailable >= creep.room.minAvailableEnergy
-          ) {
-            creep.updateStateCode(StateCode.LOADSELF, "loadSelf");
-            return;
-          }
-          if (creep.room.containersAndStorage.length > 0 && creep.room.energyInStorage) {
-            creep.updateStateCode(StateCode.HAUL, "haul");
-            return;
-          }
-
-          if (
-            creep.room.structuresToFill &&
-            creep.room.energyAvailable >= creep.room.minAvailableEnergy
-          ) {
-            creep.updateStateCode(StateCode.LOADSELF, "lSt loadSelf");
-            return;
-          }
-
-          creep.updateStateCode(StateCode.HARVEST, "harvest");
-        } else if (creep.room.structuresToFill.length === 0) {
-          creep.updateStateCode(StateCode.LOAD, "load");
         }
       }
     },
     build: {
       code: StateCode.BUILD,
-      run: creep.buildProc,
+      run: this.buildProc,
       transition: () => {
-        if (creep.store.energy === 0) {
-          if (creep.room.buildables.length === 0) {
-            creep.updateStateCode(StateCode.LOAD, "load");
-          } else if (creep.room.energyAvailable < creep.room.minAvailableEnergy) {
-            if (creep.room.energyInStorage > 0) {
-              creep.updateStateCode(StateCode.HAUL, "haul");
-            } else {
-              creep.updateStateCode(StateCode.HARVEST, "harvest");
-            }
+        if (this.store.energy === 0) {
+          if (this.room.buildables.length === 0) {
+            this.updateStateCode(StateCode.LOAD, "load");
+          } else if (this.room.energyAvailable < this.room.minAvailableEnergy) {
+            this.updateStateCode(StateCode.WAITING, "bld wait");
           } else {
-            creep.updateStateCode(StateCode.LOADSELF, "loadSelf");
+            this.updateStateCode(StateCode.LOADSELF, "loadSelf");
           }
-        } else if (creep.room.buildables.length === 0) {
-          creep.updateStateCode(StateCode.LOAD, "load");
-        }
-      }
-    },
-    haul: {
-      code: StateCode.HAUL,
-      run: creep.haulProc,
-      transition: () => {
-        // if no free capacity or no energy in storage
-        if (creep.store.getFreeCapacity() === 0 || creep.room.energyInStorage === 0) {
-          // DETERMINE THIS STATE
-          if (creep.room.energyAvailable >= creep.room.minAvailableEnergy)
-            creep.updateStateCode(StateCode.BUILD, "build");
-          else creep.updateStateCode(StateCode.LOAD, "load");
-        }
-      }
-    },
-    harvest: {
-      code: StateCode.HARVEST,
-      run: creep.harvestProc,
-      transition: () => {
-        if (creep.store.getUsedCapacity(RESOURCE_ENERGY) === creep.store.getCapacity()) {
-          if (creep.room.buildables.length > 0) {
-            creep.updateStateCode(StateCode.BUILD, "build hv");
-          } else if (creep.room.energyAvailable < creep.room.minAvailableEnergy) {
-            creep.updateStateCode(StateCode.LOAD, "load hv");
-          } else {
-            creep.updateStateCode(StateCode.UPGRADE, "upgrade hv");
-          }
-        }
-      }
-    },
-    upgrade: {
-      code: StateCode.UPGRADE,
-      run: creep.upgradeProc,
-      transition: () => {
-        if (!creep.room.controller) {
-          creep.updateStateCode(StateCode.INIT, "reset");
-        } else if (creep.store.energy === 0) {
-          if (creep.room.energyAvailable < creep.room.minAvailableEnergy) {
-            creep.updateStateCode(StateCode.HARVEST, "harvest");
-          } else {
-            creep.updateStateCode(StateCode.LOADSELF, "loadSelf");
-          }
+        } else if (this.room.buildables.length === 0) {
+          this.updateStateCode(StateCode.LOAD, "load");
         }
       }
     },
     load: {
       code: StateCode.LOAD,
       run: () =>
-        creep.loadProc(
+        this.loadProc(
           (structure: Structure) => structure.structureType === STRUCTURE_EXTENSION
         ),
       transition: () => {
-        if (creep.store.energy === 0) {
-          if (
-            creep.room.energyAvailable < creep.room.minAvailableEnergy &&
-            creep.room.energyInStorage > 0
-          ) {
-            creep.updateStateCode(StateCode.HAUL, "haul");
-          } else if (creep.room.buildables.length > 0) {
-            creep.updateStateCode(StateCode.LOADSELF, "loadSelf ld");
+        if (this.store.energy === 0) {
+          if (this.room.buildables.length > 0) {
+            this.updateStateCode(StateCode.LOADSELF, "loadSelf ld");
           } else {
-            creep.updateStateCode(StateCode.HARVEST, "harvest ld");
+            this.updateStateCode(StateCode.WAITING, "load wait");
           }
+        }
+      }
+    },
+    upgrade: {
+      code: StateCode.UPGRADE,
+      run: this.upgradeProc,
+      transition: () => {
+        if (this.store.energy === 0 || this.room.buildables.length > 0) {
+          if (this.room.energyAvailable >= this.room.minAvailableEnergy) {
+            this.updateStateCode(StateCode.LOADSELF, "upg loadself");
+          } else {
+            this.updateStateCode(StateCode.WAITING, "upg wait");
+          }
+        }
+      }
+    },
+    wait: {
+      code: StateCode.WAITING,
+      run: () => {
+        this.say("wait wait");
+      },
+      transition: () => {
+        if (this.room.energyAvailable >= this.room.minAvailableEnergy) {
+          this.updateStateCode(StateCode.LOADSELF, "loadself");
         }
       }
     }
   };
-  creep.states = states;
-  return creep;
+  this.states = states;
+  return this;
 };
 
 export default getBuilderCreep;

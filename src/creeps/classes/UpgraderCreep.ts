@@ -2,59 +2,61 @@ import { BaseCreepStates, StateCode } from "../../types/States";
 
 declare global {
   interface UpgraderRoleStates extends BaseCreepStates {
-    harvest: CreepState;
     upgrade: CreepState;
     loadSelf: CreepState;
+    wait: CreepState;
   }
 }
 
-const getUpgraderCreep = function (creep: Creep): Creep {
+const getUpgraderCreep = function (this: Creep): Creep {
   const states: UpgraderRoleStates = {
     init: {
       code: StateCode.INIT,
       run: () => {},
-      transition: function () {
-        if (creep.room.energyAvailable > creep.room.minAvailableEnergy) {
-          creep.updateStateCode(StateCode.LOADSELF, "loadself");
+      transition: () => {
+        if (this.room.energyAvailable >= this.room.minAvailableEnergy) {
+          this.updateStateCode(StateCode.LOADSELF, "loadself");
         } else {
-          creep.updateStateCode(StateCode.HARVEST, "harvest");
-        }
-      }
-    },
-    harvest: {
-      code: StateCode.HARVEST,
-      run: creep.harvestProc,
-      transition: function () {
-        if (creep.store.getFreeCapacity() === 0) {
-          creep.updateStateCode(StateCode.UPGRADE, "upgrade");
+          this.updateStateCode(StateCode.WAITING, "init wait");
         }
       }
     },
     upgrade: {
       code: StateCode.UPGRADE,
-      run: creep.upgradeProc,
-      transition: function () {
-        if (creep.store.energy === 0) {
-          if (creep.room.energyAvailable > creep.room.minAvailableEnergy) {
-            creep.updateStateCode(StateCode.LOADSELF, "loadSelf");
+      run: this.upgradeProc,
+      transition: () => {
+        if (this.store.energy === 0) {
+          if (this.room.energyAvailable > this.room.minAvailableEnergy) {
+            this.updateStateCode(StateCode.LOADSELF, "loadSelf");
           } else {
-            creep.updateStateCode(StateCode.HARVEST, "harvest");
+            this.updateStateCode(StateCode.WAITING, "upgr wait");
           }
         }
       }
     },
     loadSelf: {
       code: StateCode.LOADSELF,
-      run: creep.loadSelfProc,
-      transition: function () {
-        if (creep.store.getFreeCapacity() === 0) {
-          creep.updateStateCode(StateCode.UPGRADE, "upgrade");
+      run: this.loadSelfProc,
+      transition: () => {
+        if (this.store.getFreeCapacity() === 0) {
+          this.updateStateCode(StateCode.UPGRADE, "upgrade");
+        }
+      }
+    },
+    wait: {
+      code: StateCode.WAITING,
+      run: () => {
+        this.say("wait wait");
+      },
+      transition: () => {
+        if (this.room.energyAvailable >= this.room.minAvailableEnergy) {
+          this.updateStateCode(StateCode.LOADSELF, "loadself");
         }
       }
     }
   };
-  creep.states = states;
-  return creep;
+  this.states = states;
+  return this;
 };
 
 export default getUpgraderCreep;

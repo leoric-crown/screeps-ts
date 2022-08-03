@@ -1,138 +1,51 @@
-import { BaseCreepStates, StateCode } from "../../types/States";
+import { BaseCreepStates, CreepRole, StateCode } from "../../types/States";
 
 declare global {
   interface HaulerRoleStates extends BaseCreepStates {
     haul: CreepState;
     load: CreepState;
-    loadSelf: CreepState;
-    loadStructure: CreepState;
-    harvest: CreepState;
   }
 }
 
-const getHaulerCreep = function (creep: Creep): Creep {
+const getHaulerCreep = function (this: Creep): Creep {
+  const targetSource = this.memory.target
+    ? (Game.getObjectById(this.memory.target) as Source)
+    : undefined;
+  const harvesters = this.room.creeps.mine.filter(
+    creep =>
+      creep.memory.target === this.memory.target && creep.role === CreepRole.HARVESTER
+  );
   const states: HaulerRoleStates = {
     init: {
       code: StateCode.INIT,
       run: () => {},
       transition: () => {
-        if (creep.room.energyInStorage > 100) {
-          creep.updateStateCode(StateCode.HAUL, "haul");
-          return;
-        }
-
-        if (creep.room.energyAvailable >= creep.room.minAvailableEnergy) {
-          creep.updateStateCode(StateCode.LOADSELF, "loadSelf");
-          return;
-        }
-
-        creep.updateStateCode(StateCode.HARVEST, "harvest");
+        this.updateStateCode(StateCode.HAUL, "haul");
       }
     },
     haul: {
       code: StateCode.HAUL,
-      run: creep.haulProc,
+      run: () => this.haulProc(harvesters),
       transition: () => {
-        if (
-          creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0 ||
-          creep.room.energyInStorage === 0
-        ) {
-          if (
-            creep.room.energyAvailable > creep.room.minAvailableEnergy &&
-            creep.room.structuresToFill?.length > 0
-          ) {
-            creep.updateStateCode(StateCode.LOAD_STRUCTURE, "loadStruct");
-            return;
+        if (targetSource) {
+          if (harvesters.length === 0 || this.store.getFreeCapacity() === 0) {
+            this.updateStateCode(StateCode.LOAD, "load");
           }
-          creep.updateStateCode(StateCode.LOAD, "load");
-        }
+        } else throw new Error(`Creep ${this.name} in haul state has no targetSource`);
       }
     },
     load: {
       code: StateCode.LOAD,
-      run: () =>
-        creep.loadProc(
-          (structure: Structure) => structure.structureType === STRUCTURE_EXTENSION
-        ),
+      run: this.loadProc,
       transition: () => {
-        if (creep.store.energy === 0) {
-          if (
-            creep.room.containersAndStorage.length > 0 &&
-            creep.room.energyInStorage &&
-            creep.room.energyAvailable < creep.room.energyCapacityAvailable * 0.8
-          ) {
-            creep.updateStateCode(StateCode.HAUL, "haul");
-            return;
-          }
-
-          if (
-            creep.room.structuresToFill.length > 0 &&
-            creep.room.energyAvailable >= creep.room.minAvailableEnergy
-          ) {
-            creep.updateStateCode(StateCode.LOADSELF, "loadself");
-            return;
-          }
-          creep.updateStateCode(StateCode.HARVEST, "harvest");
-        }
-      }
-    },
-    loadSelf: {
-      code: StateCode.LOADSELF,
-      run: creep.loadSelfProc,
-      transition: () => {
-        if (creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
-          creep.updateStateCode(StateCode.LOAD_STRUCTURE, "loadStruct");
-        }
-      }
-    },
-    loadStructure: {
-      code: StateCode.LOAD_STRUCTURE,
-      run: creep.loadStructureProc,
-      transition: () => {
-        if (creep.store.energy === 0) {
-          if (creep.room.containersAndStorage.length > 0 && creep.room.energyInStorage) {
-            creep.updateStateCode(StateCode.HAUL, "haul");
-            return;
-          }
-
-          if (
-            creep.room.structuresToFill &&
-            creep.room.energyAvailable >= creep.room.minAvailableEnergy
-          ) {
-            creep.updateStateCode(StateCode.LOADSELF, "loadself");
-            return;
-          }
-
-          creep.updateStateCode(StateCode.HARVEST, "harvest");
-        } else if (creep.room.structuresToFill.length === 0) {
-          creep.updateStateCode(StateCode.LOAD, "load");
-        }
-      }
-    },
-    harvest: {
-      code: StateCode.HARVEST,
-      run: creep.harvestProc,
-      transition: () => {
-        if (
-          creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0 ||
-          (creep.room.energyAvailable < creep.room.energyCapacityAvailable &&
-            creep.room.energyInStorage > 0)
-        ) {
-          if (creep.store.energy !== 0) {
-            if (creep.room.structuresToFill.length > 0) {
-              creep.updateStateCode(StateCode.LOAD_STRUCTURE, "loadStruct");
-            } else {
-              creep.updateStateCode(StateCode.LOAD, "load");
-            }
-          } else {
-            creep.updateStateCode(StateCode.HAUL, "haul");
-          }
+        if (this.store.energy === 0) {
+          this.updateStateCode(StateCode.HAUL, "haul");
         }
       }
     }
   };
-  creep.states = states;
-  return creep;
+  this.states = states;
+  return this;
 };
 
 export default getHaulerCreep;

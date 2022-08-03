@@ -2,14 +2,14 @@ import { StateCode, CreepType, CreepRole } from "../types/States";
 import { getBuilderCreep, getHarvesterCreep, getHaulerCreep, getUpgraderCreep } from ".";
 //@ts-ignore
 import profiler from "../utils/screeps-profiler";
-import { values } from "lodash";
+import { range, values } from "lodash";
 
 declare global {
   interface CreepMemory {
     type: CreepType;
     role: CreepRole;
     state?: number;
-    target?: Id<_HasId>;
+    target?: Id<Creep | AnyStoreStructure | Source>;
     config: number;
   }
 
@@ -38,59 +38,101 @@ declare global {
 
     updateStateCode: (code: StateCode, message?: string) => void;
     getState: () => { stateName: string | undefined; state: CreepState | undefined };
+    moveProc: () => void;
     harvestProc: () => void;
     upgradeProc: () => void;
     loadProc: (filter?: (structure: Structure) => boolean) => void;
     loadSelfProc: () => void;
     buildProc: () => void;
-    haulProc: () => void;
+    haulProc: (sources: Creep[]) => void;
     loadStructureProc: () => void;
   }
 }
 
 const creepProcs = {
-  harvestProc: function (this: Creep) {
-    const targetSource = this.pos.findClosestByPath(
-      this.room.sources.filter(source => source.energy > 0)
-    );
-    if (targetSource) {
-      const tryHarvest = this.harvest(targetSource);
-      if (tryHarvest === ERR_NOT_IN_RANGE) {
-        const tryMoveTo = this.moveTo(targetSource, {
+  moveProc: function (this: Creep) {
+    if (this.memory.target) {
+      const target = Game.getObjectById(this.memory.target);
+      target &&
+        this.moveTo(target, {
           visualizePathStyle: { stroke: "#ffffff" }
         });
+    } else throw new Error(`in moveProc: Creep ${this.name} has no target to move to`);
+  },
+  harvestProc: function (this: Creep) {
+    if (this.memory.target) {
+      const targetSource = this.room.sources.find(
+        source => source.id === this.memory.target
+      );
+      if (targetSource) {
+        const tryHarvest = this.harvest(targetSource);
+        if (tryHarvest === ERR_NOT_IN_RANGE) {
+          throw new Error(
+            `in harvestProc: Creep ${this.name} is not in range of target source`
+          );
+          // const tryMoveTo = this.moveTo(targetSource, {
+          //   visualizePathStyle: { stroke: "#ffffff" }
+          // });
+        }
+      }
+    } else throw new Error(`in harvestProc: Creep ${this.name} has no target source`);
+  },
+  loadProc: function (this: Creep, filter?: (structure: Structure) => boolean) {
+    // load spawn and extensions first, containers/storage second.
+    const targets = filter ? this.room.loadables.filter(filter) : this.room.loadables;
+
+    const target = this.pos.findClosestByPath(targets) || this.room.spawns[0];
+
+    if (target) {
+      const tryLoad = this.transfer(target as LoadableStructure, RESOURCE_ENERGY);
+      if (tryLoad === ERR_NOT_IN_RANGE) {
+        this.moveTo(target, {
+          visualizePathStyle: { stroke: "#ffffff" }
+        });
+      }
+    } else
+      throw new Error(
+        `In loadProc: Creep ${this.name} found no suitable target for loading`
+      );
+  },
+  haulProc: function (this: Creep, sources: Creep[]) {
+    if (this.memory.target) {
+      const target = Game.getObjectById(this.memory.target);
+      if (target) {
+        const rangeToTarget = this.pos.getRangeTo(target);
+        console.log("rangeToTarget", rangeToTarget, target.id);
+        if (rangeToTarget > 2) this.moveTo(target);
+        else {
+          console.log("in else");
+          const sorted = sources
+            .filter(creep => creep.id !== this.id && creep.store.energy > 0)
+            .sort((a, b) => {
+              return a.store.energy > b.store.energy ? -1 : 1;
+            });
+          console.log(
+            this.name,
+            "sources: ",
+            JSON.stringify(sorted.map(source => source.store.energy))
+          );
+          const transferTarget = sorted[0] || undefined;
+          console.log("transferTarget", transferTarget?.name);
+          if (transferTarget) {
+            if (this.pos.getRangeTo(transferTarget) > 1) {
+              this.moveTo(transferTarget);
+            } else {
+              transferTarget.transfer(this, RESOURCE_ENERGY);
+            }
+          }
+        }
       }
     }
   },
   upgradeProc: function (this: Creep) {
-    if (
-      this.room.controller &&
-      this.upgradeController(this.room.controller) === ERR_NOT_IN_RANGE
-    ) {
-      this.moveTo(this.room.controller);
-    }
-  },
-  loadProc: function (this: Creep, filter?: (structure: Structure) => boolean) {
-    const targets = filter ? this.room.loadables.filter(filter) : this.room.loadables;
-
-    let target: LoadableStructure | undefined = undefined;
-    if (this.memory.target) {
-      const fetchedObject = Game.getObjectById(
-        this.memory.target as Id<LoadableStructure>
-      );
-      target = (fetchedObject as LoadableStructure) || undefined;
-      if (target && target.store.getFreeCapacity() === 0) target = undefined;
-    }
-
-    if (target == undefined)
-      target = this.pos.findClosestByPath(targets) || this.room.spawns[0];
-    const tryLoad = this.transfer(target as LoadableStructure, RESOURCE_ENERGY);
-    if (tryLoad === ERR_NOT_IN_RANGE) {
-      this.moveTo(target, {
-        visualizePathStyle: { stroke: "#ffffff" }
-      });
-    } else if (tryLoad === ERR_FULL) {
-      this.memory.target = undefined;
+    if (this.room.controller) {
+      if (this.upgradeController(this.room.controller) === ERR_NOT_IN_RANGE)
+        this.moveTo(this.room.controller);
+    } else {
+      throw new Error(`No controller in room for Upgrader creep ${this.name}`);
     }
   },
   loadSelfProc: function (this: Creep) {
@@ -112,38 +154,6 @@ const creepProcs = {
         this.moveTo(this.room.buildables[0], {
           visualizePathStyle: { stroke: "#ffffff" }
         });
-      }
-    }
-  },
-  haulProc: function (this: Creep) {
-    let target: LoadableStructure | undefined = undefined;
-    if (this.memory.target) {
-      const fetchedObject = Game.getObjectById(
-        this.memory.target as Id<LoadableStructure>
-      );
-      target = (fetchedObject as LoadableStructure) || undefined;
-      if (target && target.store.getFreeCapacity() === 0) target = undefined;
-    }
-    if (target == undefined) {
-      const findTarget =
-        this.pos.findClosestByPath(this.room.containersAndStorage, {
-          filter: structure => structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0
-        }) || undefined;
-      if (findTarget) {
-        target = findTarget;
-        this.memory.target = findTarget.id;
-      }
-    }
-
-    if (target !== undefined) {
-      const tryWithdraw = this.withdraw(
-        target as StructureContainer | StructureStorage,
-        RESOURCE_ENERGY
-      );
-      if (tryWithdraw === ERR_NOT_IN_RANGE) {
-        this.moveTo(target);
-      } else if (tryWithdraw === ERR_NOT_ENOUGH_ENERGY) {
-        this.memory.target = undefined;
       }
     }
   },
@@ -177,7 +187,6 @@ const extendCreep = function () {
   Object.defineProperty(Creep.prototype, "updateStateCode", {
     value: function (code: StateCode, message?: string) {
       this.memory.state = code;
-      this.memory.target = undefined;
       if (message) this.say(message);
     },
     enumerable: true,
@@ -260,13 +269,13 @@ let _getStatefulCreep = function (creep: Creep) {
   }
   switch (creep.role) {
     case CreepRole.BUILDER:
-      return getBuilderCreep(creep);
+      return getBuilderCreep.bind(creep)();
     case CreepRole.HARVESTER:
-      return getHarvesterCreep(creep);
+      return getHarvesterCreep.bind(creep)();
     case CreepRole.HAULER:
-      return getHaulerCreep(creep);
+      return getHaulerCreep.bind(creep)();
     case CreepRole.UPGRADER:
-      return getUpgraderCreep(creep);
+      return getUpgraderCreep.bind(creep)();
     default:
       throw new Error(`Creep role: ${creep.role} did not match any StatefulCreep getter`);
   }
