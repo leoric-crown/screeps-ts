@@ -4,12 +4,12 @@ declare global {
   export interface HarvesterRoleStates extends BaseCreepStates {
     move: CreepState;
     harvest: CreepState;
-    waiting: CreepState;
+    wait: CreepState;
     load: CreepState;
   }
 }
 
-const getHarvesterCreep = function (this: Creep): Creep {
+const getHarvester = function (this: Creep): Creep {
   const targetSource = this.memory.target
     ? (Game.getObjectById(this.memory.target) as Source)
     : undefined;
@@ -49,15 +49,8 @@ const getHarvesterCreep = function (this: Creep): Creep {
                 creep.memory.target === this.memory.target
               );
             });
-            console.log(
-              "in harvester transition from HARVEST:",
-              JSON.stringify(sourceHaulers.map(a => a.name))
-            );
+
             const haulersAvailable = sourceHaulers.length > 0; // store this in CreepManager and add property to creep
-            console.log(
-              "in harvester transition from HARVEST, haulersAvailable: ",
-              haulersAvailable
-            );
             if (!haulersAvailable) {
               this.updateStateCode(StateCode.LOAD, "load");
             } else {
@@ -67,11 +60,9 @@ const getHarvesterCreep = function (this: Creep): Creep {
         } else throw new Error(`Harvester ${this.name} has no target source`);
       }
     },
-    waiting: {
+    wait: {
       code: StateCode.WAITING,
-      run: () => {
-        this.say("full");
-      },
+      run: () => {},
       transition: () => {
         if (this.store.getFreeCapacity() > 0) {
           this.updateStateCode(StateCode.HARVEST, "harvest");
@@ -94,4 +85,4 @@ const getHarvesterCreep = function (this: Creep): Creep {
   return this;
 };
 
-export default getHarvesterCreep;
+export default getHarvester;

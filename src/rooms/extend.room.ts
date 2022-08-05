@@ -1,3 +1,5 @@
+import { ContainerType } from "types/States";
+
 type DamagedStructures = {
   roads: StructureRoad[];
   defenses: (StructureWall | StructureRampart)[];
@@ -6,15 +8,21 @@ type DamagedStructures = {
 };
 
 declare global {
-  type LoadableStructure =
-    | StructureSpawn
-    | StructureExtension
-    | StructureContainer
-    | StructureStorage;
+  type LoadableStructure = StructureSpawn | StructureExtension;
+  // | StructureContainer
+  // | StructureStorage;
 
   interface RoomMemory {
     minAvailableEnergy: number;
+    remoteSources: RemoteSource[];
+    containers: { [containerId: string]: ContainerMemory };
   }
+
+  type RemoteSource = {
+    remoteRoom: string;
+    sourceId: Id<Source>;
+    pos: { x: number; y: number };
+  };
 
   interface Room {
     owner: string | undefined;
@@ -28,6 +36,10 @@ declare global {
       hostile: Creep[];
     };
 
+    remoteCreeps: Creep[];
+
+    remoteSources: RemoteSource[];
+
     spawns: StructureSpawn[];
     sources: Source[];
 
@@ -38,14 +50,6 @@ declare global {
     containers: StructureContainer[];
     managedStructures: ManagedStructure[];
     damagedStructures: DamagedStructures;
-
-    // structures: {
-    //   loadables: LoadableStructure[];
-    //   extensions: StructureExtension[];
-    //   containers: StructureContainer[];
-    //   managed: ManagedStructure[];
-    //   damaged: DamagedStructures;
-    // }
 
     minAvailableEnergy: number;
 
@@ -100,11 +104,10 @@ const extendRoom = function () {
   Object.defineProperty(Room.prototype, "damagedCreeps", {
     get: function () {
       if (!this._damagedCreeps) {
+        const damagedFilter = (creep: Creep) => creep.hits < creep.hitsMax;
         this._damagedCreeps = {
-          mine: this.creeps.mine.filter((creep: Creep) => creep.hits < creep.hitsMax),
-          hostile: this.creeps.hostile.filter(
-            (creep: Creep) => creep.hits < creep.hitsMax
-          )
+          mine: this.creeps.mine.filter(damagedFilter),
+          hostile: this.creeps.hostile.filter(damagedFilter)
         };
       }
       return this._damagedCreeps;
@@ -114,6 +117,33 @@ const extendRoom = function () {
     },
     enumerable: true,
     configurable: true
+  });
+
+  Object.defineProperty(Room.prototype, "remoteCreeps", {
+    get: function () {
+      if (!this._remoteCreeps) {
+        this._remoteCreeps = Object.values(Game.creeps).filter(
+          creep => creep.memory.home === this.name
+        );
+      }
+      return this._remoteCreeps;
+    }
+  });
+
+  Object.defineProperty(Room.prototype, "remoteSources", {
+    get: function () {
+      if (!this.memory.remoteSources) {
+        this._remoteSources = [];
+        this.memory.remoteSources = this._remoteSources;
+      } else if (!this._remoteSources) {
+        this._remoteSources = this.memory.remoteSources;
+      }
+      return this._remoteSources;
+    },
+    set: function (value: RemoteSource[]) {
+      this._remoteSources = value;
+      this.memory.remoteSources = value;
+    }
   });
 
   Object.defineProperty(Room.prototype, "spawns", {
@@ -362,8 +392,8 @@ const isLoadable = (structure: AnyStoreStructure) => {
   switch (structure.structureType) {
     case STRUCTURE_SPAWN:
     case STRUCTURE_EXTENSION:
-    case STRUCTURE_CONTAINER:
-    case STRUCTURE_STORAGE:
+      // case STRUCTURE_CONTAINER:
+      // case STRUCTURE_STORAGE:
       return (
         structure.store[RESOURCE_ENERGY] < structure.store.getCapacity(RESOURCE_ENERGY)
       );

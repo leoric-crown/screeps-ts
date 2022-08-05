@@ -14,7 +14,13 @@ class CreepManager {
   constructor(room: Room) {
     this.room = room;
     let creepList = {} as CreepList;
-    room.creeps.mine.forEach(creep => {
+    const uniqueCreeps: Creep[] = [];
+    [...room.creeps.mine, ...room.remoteCreeps].forEach(creep => {
+      if (!uniqueCreeps.map(c => c.name).includes(creep.name) && !creep.spawning) {
+        uniqueCreeps.push(creep);
+      }
+    });
+    uniqueCreeps.forEach(creep => {
       creepList[creep.name] = getStatefulCreep(creep);
     });
     this.creeps = creepList;
@@ -61,7 +67,7 @@ class CreepManager {
       for (let creepName in this.creeps) {
         const creep = this.creeps[creepName];
         setMemory(creep);
-        const { stateName, state} = creep.getState();
+        const { stateName, state } = creep.getState();
         state?.run();
         state?.transition();
       }

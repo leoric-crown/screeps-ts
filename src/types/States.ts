@@ -14,6 +14,8 @@ export enum StateCode {
   IDLE = 11,
   SPAWNING = 12,
   WAITING = 13,
+  SWITCH_ROOM = 14,
+  SUPPLY = 15
 }
 
 const StateDictionary: { [code: string]: string } = {};
@@ -31,14 +33,25 @@ export enum CreepType {
   HARVESTER = "harvester",
   BUILDER = "builder",
   UPGRADER = "upgrader",
-  HAULER = "hauler"
+  HAULER = "hauler",
+  REMOTE_HARVESTER = "remote_harvester",
+  REMOTE_HAULER = "remote_hauler",
+  SUPPLIER = "supplier"
+}
+
+export enum ContainerType {
+  DEPOSIT = "deposit",
+  SUPPLY = "supply"
 }
 
 export enum CreepRole {
   HARVESTER = "harvester",
   UPGRADER = "upgrader",
   BUILDER = "builder",
-  HAULER = "hauler"
+  HAULER = "hauler",
+  REMOTE_HARVESTER = "remote_harvester",
+  REMOTE_HAULER = "remote_hauler",
+  SUPPLIER = "supplier"
 }
 
 export interface BaseRoomState {

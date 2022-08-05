@@ -43,7 +43,11 @@ const baseLoop = () => {
   );
 
   // Initialize custom structures memory
-  Memory.structures = Memory.structures || ({} as StructureMemory);
+  // Memory.structures = Memory.structures || ({} as StructureMemory);
+  if (_.isUndefined(Memory.structures)) {
+    console.log("RESETTING MEMORY");
+    Memory.structures = {};
+  }
 
   const room = getStatefulRoom(Game.rooms["W8N3"]);
   room.run();

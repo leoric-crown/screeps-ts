@@ -1,16 +1,27 @@
-import { StateCode, CreepType, CreepRole } from "../types/States";
-import { getBuilderCreep, getHarvesterCreep, getHaulerCreep, getUpgraderCreep } from ".";
+import { StateCode, CreepType, CreepRole, ContainerType } from "../types/States";
+import {
+  getBuilder,
+  getHarvester,
+  getSourceHauler,
+  getUpgraderCreep,
+  getRemoteHarvester,
+  getRemoteHauler,
+  getSupplier
+} from ".";
 //@ts-ignore
 import profiler from "../utils/screeps-profiler";
-import { range, values } from "lodash";
 
 declare global {
   interface CreepMemory {
     type: CreepType;
     role: CreepRole;
-    state?: number;
-    target?: Id<Creep | AnyStoreStructure | Source>;
     config: number;
+    state?: number;
+    target?: Id<Creep | AnyStoreStructure | Source | StructureController>;
+    remoteRoom?: string;
+    deposit?: [Id<AnyStoreStructure>];
+    home?: string;
+    destination?: { x: number; y: number; roomName: string };
   }
 
   type CreepState = {
@@ -23,7 +34,9 @@ declare global {
     | BuilderRoleStates
     | HarvesterRoleStates
     | HaulerRoleStates
-    | UpgraderRoleStates;
+    | UpgraderRoleStates
+    | RemoteHarvesterStates
+    | SupplierRoleStates;
 
   type CreepTarget = Creep | ConstructionSite | Structure;
 
@@ -34,54 +47,79 @@ declare global {
     type?: CreepType;
     role?: CreepRole;
 
+    destination?: RoomPosition;
+
     states?: CreepRoleStates;
 
     updateStateCode: (code: StateCode, message?: string) => void;
     getState: () => { stateName: string | undefined; state: CreepState | undefined };
     moveProc: () => void;
-    harvestProc: () => void;
+    harvestProc: (source?: Source) => void;
     upgradeProc: () => void;
     loadProc: (filter?: (structure: Structure) => boolean) => void;
-    loadSelfProc: () => void;
+    loadSelfProc: (target?: Structure) => void;
     buildProc: () => void;
     haulProc: (sources: Creep[]) => void;
+    supplyProc: (creepRole: CreepRole) => void;
     loadStructureProc: () => void;
   }
 }
 
 const creepProcs = {
   moveProc: function (this: Creep) {
-    if (this.memory.target) {
-      const target = Game.getObjectById(this.memory.target);
-      target &&
-        this.moveTo(target, {
-          visualizePathStyle: { stroke: "#ffffff" }
-        });
+    const target =
+      this.memory.destination ||
+      (this.memory.target ? Game.getObjectById(this.memory.target)?.pos : undefined);
+    if (target) {
+      // const moveTarget = Game.getObjectById(target);
+      const { x, y, roomName } = target;
+      const tryMoveTo = this.moveTo(new RoomPosition(x, y, roomName), {
+        visualizePathStyle: { stroke: "#ffffff" }
+      });
     } else throw new Error(`in moveProc: Creep ${this.name} has no target to move to`);
   },
-  harvestProc: function (this: Creep) {
+  harvestProc: function (this: Creep, source?: Source) {
     if (this.memory.target) {
-      const targetSource = this.room.sources.find(
-        source => source.id === this.memory.target
-      );
+      const targetSource =
+        source || this.room.sources.find(source => source.id === this.memory.target);
       if (targetSource) {
         const tryHarvest = this.harvest(targetSource);
         if (tryHarvest === ERR_NOT_IN_RANGE) {
-          throw new Error(
-            `in harvestProc: Creep ${this.name} is not in range of target source`
-          );
-          // const tryMoveTo = this.moveTo(targetSource, {
-          //   visualizePathStyle: { stroke: "#ffffff" }
-          // });
+          this.moveTo(targetSource, {
+            visualizePathStyle: { stroke: "#ffffff" }
+          });
         }
       }
     } else throw new Error(`in harvestProc: Creep ${this.name} has no target source`);
   },
-  loadProc: function (this: Creep, filter?: (structure: Structure) => boolean) {
-    // load spawn and extensions first, containers/storage second.
-    const targets = filter ? this.room.loadables.filter(filter) : this.room.loadables;
+  loadProc: function (this: Creep, filter?: (structure: AnyStoreStructure) => boolean) {
+    let target = undefined;
+    if (this.room.energyAvailable < this.room.minAvailableEnergy) {
+      const targetLoadables = filter
+        ? this.room.loadables.filter(filter)
+        : this.room.loadables;
+      target = this.pos.findClosestByPath(targetLoadables) || this.room.spawns[0];
+    } else {
+      const nonFullDeposits = this.room.containers.filter(x => {
+        return (
+          x.store.getFreeCapacity() > 0 &&
+          x.memory.containerType === ContainerType.DEPOSIT
+        );
+      });
 
-    const target = this.pos.findClosestByPath(targets) || this.room.spawns[0];
+      if (nonFullDeposits.length > 0) {
+        const targetDeposits = filter ? nonFullDeposits.filter(filter) : nonFullDeposits;
+        targetDeposits.length > 0 &&
+          (target = this.pos.findClosestByPath(targetDeposits));
+      }
+    }
+
+    if (!target) {
+      const targetLoadables = filter
+        ? this.room.loadables.filter(filter)
+        : this.room.loadables;
+      target = this.pos.findClosestByPath(targetLoadables) || this.room.spawns[0];
+    }
 
     if (target) {
       const tryLoad = this.transfer(target as LoadableStructure, RESOURCE_ENERGY);
@@ -95,32 +133,50 @@ const creepProcs = {
         `In loadProc: Creep ${this.name} found no suitable target for loading`
       );
   },
+  // rename this to something more descriptive, this procedure loads energy from creeps into creep store
   haulProc: function (this: Creep, sources: Creep[]) {
     if (this.memory.target) {
       const target = Game.getObjectById(this.memory.target);
       if (target) {
         const rangeToTarget = this.pos.getRangeTo(target);
-        console.log("rangeToTarget", rangeToTarget, target.id);
-        if (rangeToTarget > 2) this.moveTo(target);
+        if (rangeToTarget > 10) this.moveTo(target);
         else {
-          console.log("in else");
           const sorted = sources
             .filter(creep => creep.id !== this.id && creep.store.energy > 0)
             .sort((a, b) => {
               return a.store.energy > b.store.energy ? -1 : 1;
             });
-          console.log(
-            this.name,
-            "sources: ",
-            JSON.stringify(sorted.map(source => source.store.energy))
-          );
           const transferTarget = sorted[0] || undefined;
-          console.log("transferTarget", transferTarget?.name);
           if (transferTarget) {
             if (this.pos.getRangeTo(transferTarget) > 1) {
               this.moveTo(transferTarget);
             } else {
               transferTarget.transfer(this, RESOURCE_ENERGY);
+            }
+          }
+        }
+      }
+    }
+  },
+  supplyProc: function (this: Creep, creepRole: CreepRole) {
+    if (this.memory.target) {
+      const target = Game.getObjectById(this.memory.target);
+      if (target) {
+        if (this.pos.getRangeTo(target) > 10) this.moveTo(target);
+        else {
+          const creeps = this.room.creeps.mine
+            .filter(
+              creep => creep.role === creepRole && creep.pos.getRangeTo(target) <= 5
+            )
+            .sort((a, b) => {
+              return a.store.energy < b.store.energy ? -1 : 1;
+            });
+          const transferTarget = creeps[0] || undefined;
+          if (transferTarget) {
+            if (this.pos.getRangeTo(transferTarget) > 1) {
+              this.moveTo(transferTarget);
+            } else {
+              this.transfer(transferTarget, RESOURCE_ENERGY);
             }
           }
         }
@@ -135,16 +191,26 @@ const creepProcs = {
       throw new Error(`No controller in room for Upgrader creep ${this.name}`);
     }
   },
-  loadSelfProc: function (this: Creep) {
-    const target =
-      this.pos.findClosestByPath(
-        [...this.room.spawns, ...this.room.extensions].filter(
-          structure => structure.energy > 0
-        )
-      ) || this.room.spawns[0];
-    const tryWithdraw = this.withdraw(target, RESOURCE_ENERGY);
-    if (tryWithdraw === ERR_NOT_IN_RANGE) {
-      this.moveTo(target);
+  loadSelfProc: function (this: Creep, target?: AnyStoreStructure) {
+    if (!target) {
+      const targetContainer = this.pos.findClosestByPath(
+        this.room.containers.filter(container => container.store.energy > 0)
+      );
+      targetContainer && (target = targetContainer);
+
+      !target &&
+        (target =
+          this.pos.findClosestByPath(
+            [...this.room.spawns, ...this.room.extensions].filter(
+              structure => structure.energy > 0
+            )
+          ) || this.room.spawns[0]);
+    }
+    if (target) {
+      const tryWithdraw = this.withdraw(target, RESOURCE_ENERGY);
+      if (tryWithdraw === ERR_NOT_IN_RANGE) {
+        this.moveTo(target);
+      }
     }
   },
   buildProc: function (this: Creep) {
@@ -252,6 +318,21 @@ const extendCreep = function () {
     configurable: true
   });
 
+  Object.defineProperty(Creep.prototype, "destination", {
+    get: function () {
+      if (!this.memory.destination) {
+        return undefined;
+      } else if (!this._destination) {
+        const { x, y, roomName } = this.memory.destination;
+        this._destination = new RoomPosition(x, y, roomName);
+      }
+      return this._destination;
+    },
+    set: function (value: { x: number; y: number; roomName: string }) {
+      this.memory.destination = value;
+    }
+  });
+
   for (let [name, proc] of Object.entries(creepProcs)) {
     Object.defineProperty(Creep.prototype, name, {
       get: function () {
@@ -269,13 +350,19 @@ let _getStatefulCreep = function (creep: Creep) {
   }
   switch (creep.role) {
     case CreepRole.BUILDER:
-      return getBuilderCreep.bind(creep)();
+      return getBuilder.bind(creep)();
     case CreepRole.HARVESTER:
-      return getHarvesterCreep.bind(creep)();
+      return getHarvester.bind(creep)();
     case CreepRole.HAULER:
-      return getHaulerCreep.bind(creep)();
+      return getSourceHauler.bind(creep)();
     case CreepRole.UPGRADER:
       return getUpgraderCreep.bind(creep)();
+    case CreepRole.REMOTE_HARVESTER:
+      return getRemoteHarvester.bind(creep)();
+    case CreepRole.REMOTE_HAULER:
+      return getRemoteHauler.bind(creep)();
+    case CreepRole.SUPPLIER:
+      return getSupplier.bind(creep)();
     default:
       throw new Error(`Creep role: ${creep.role} did not match any StatefulCreep getter`);
   }

@@ -3,14 +3,18 @@ import { CreepType, CreepRole } from "../types/States";
 
 export type CreepConfigData = {
   id: number;
+  name: string;
   creepType: CreepType;
   role: CreepRole;
   desired: number;
+  // desired: () => number;
   body: BodyPartConstant[];
   scaleBody?: BodyPartConstant[];
   bodyOrder?: BodyPartConstant[];
   scaleLimit?: number;
-  target?: Id<Creep | AnyStoreStructure | Source>
+  target?: Id<Creep | AnyStoreStructure | Source | StructureController>;
+  remoteRoom?: string;
+  home?: string;
 };
 
 export interface CreepConfig extends CreepConfigData {

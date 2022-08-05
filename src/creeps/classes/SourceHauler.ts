@@ -7,7 +7,7 @@ declare global {
   }
 }
 
-const getHaulerCreep = function (this: Creep): Creep {
+const getSourceHauler = function (this: Creep): Creep {
   const targetSource = this.memory.target
     ? (Game.getObjectById(this.memory.target) as Source)
     : undefined;
@@ -48,4 +48,4 @@ const getHaulerCreep = function (this: Creep): Creep {
   return this;
 };
 
-export default getHaulerCreep;
+export default getSourceHauler;

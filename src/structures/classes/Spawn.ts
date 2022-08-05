@@ -1,4 +1,4 @@
-import { bodyAbbreviations, CreepConfig } from "creeps/creeps.config";
+import { CreepConfig } from "creeps/creeps.config";
 import { StateCode, StateDictionary } from "../../types/States";
 
 type NextCreepMemory = {
@@ -17,12 +17,12 @@ declare global {
 
 export interface SpawnerStates extends BaseStructureStates {
   idle: StructureState;
-  waiting: StructureState;
+  wait: StructureState;
   spawning: StructureState;
 }
 
 interface CreepCounts {
-  [typeName: string]: number;
+  [configId: number]: number;
 }
 
 interface StatefulSpawn extends StructureSpawn {
@@ -98,11 +98,16 @@ const extendSpawn = function () {
       value: function () {
         const stateCode = this.memory.state;
 
-        global.log(
-          `Spawn: ${this.room} - In state: ${
-            StateDictionary[stateCode]
-          }, creepCounts = ${JSON.stringify(this.creepCounts)}`
-        );
+        const creepCountsWithName: { [name: string]: any } = {};
+        for (let [id, count] of Object.entries(this.creepCounts as CreepCounts)) {
+          const name = this.creepConfigs.find(
+            (config: CreepConfig) => config.id.toString() === id
+          ).name;
+          creepCountsWithName[name] = count;
+        }
+
+        global.log(`Spawn: ${this.room} - In state: ${StateDictionary[stateCode]}`);
+        global.log(`Spawn: ${this.room} - ${JSON.stringify(creepCountsWithName)}`);
       },
       writable: true
     }
@@ -136,7 +141,7 @@ export const spawnerStates = function (this: StatefulSpawn) {
       run: () => {
         this.log();
         if (!this.nextCreep.request) {
-          const { request, ticksToLive: tick } = checkCreepExpiry(this.room);
+          const { request, ticksToLive: tick } = checkCreepExpiry.bind(this)();
           if (request && tick) {
             this.nextCreep = {
               request,
@@ -148,7 +153,6 @@ export const spawnerStates = function (this: StatefulSpawn) {
               )}`
             );
           } else {
-
           }
         }
       },
@@ -162,7 +166,7 @@ export const spawnerStates = function (this: StatefulSpawn) {
       }
     },
 
-    waiting: {
+    wait: {
       code: StateCode.WAITING,
       run: () => {
         this.log();
@@ -205,15 +209,20 @@ export const spawnerStates = function (this: StatefulSpawn) {
               return;
             }
 
-            const creepName = `${body.map(part => bodyAbbreviations[part]).join("")}-${
-              Game.time
-            }`;
+            // const creepName = `${body.map(part => bodyAbbreviations[part]).join("")}-${
+            //   Game.time
+            // }`;
+
+            const creepName = `${request.creepType}-${Game.time}`;
+
             const trySpawn = this.spawnCreep(body, creepName, {
               memory: {
                 type: request.creepType,
                 role: request.role,
                 config: request.id,
-                target: request.target
+                target: request.target,
+                remoteRoom: request.remoteRoom,
+                home: request.home
               }
             });
             if (trySpawn !== 0) throw new Error(`Error spawning creep: ${trySpawn}`);
@@ -255,7 +264,7 @@ export const spawnerStates = function (this: StatefulSpawn) {
   };
 };
 
-const checkCreepExpiry = function (room: StatefulRoom) {
+const checkCreepExpiry = function (this: StatefulSpawn) {
   let searchResult: {
     ticksToLive: number | undefined;
     config: number | undefined;
@@ -264,7 +273,24 @@ const checkCreepExpiry = function (room: StatefulRoom) {
     config: undefined
   };
 
-  const creeps = room.creeps.mine;
+  const uniqueCreeps: Creep[] = [];
+  [...this.room.creeps.mine, ...this.room.remoteCreeps].forEach(creep => {
+    if (!uniqueCreeps.map(c => c.name).includes(creep.name) && !creep.spawning) {
+      uniqueCreeps.push(creep);
+    }
+  });
+
+  const creeps = uniqueCreeps.filter(creep => {
+    let keep = false;
+    const config = this.creepConfigs.find(config => config.id === creep.memory.config);
+    if (config) {
+      const overDesired = this.creepCounts[creep.memory.config] > config.desired;
+      !overDesired && (keep = true);
+      return keep;
+    } else {
+      throw new Error(`Config not found for creep: ${creep.name} [type=${creep.type}]`);
+    }
+  });
   for (let creep of creeps) {
     const { type, role, ticksToLive } = creep;
     const { config } = creep.memory;
@@ -278,7 +304,7 @@ const checkCreepExpiry = function (room: StatefulRoom) {
   let request = undefined;
   let ticksToLive = undefined;
   if (searchResult.config !== undefined && searchResult.ticksToLive !== undefined) {
-    request = room.state.creepConfigs.find(req => req.id === searchResult.config);
+    request = this.room.state.creepConfigs.find(req => req.id === searchResult.config);
     ticksToLive = searchResult.ticksToLive;
   }
   return { request, ticksToLive };
@@ -287,7 +313,13 @@ const checkCreepExpiry = function (room: StatefulRoom) {
 const getCreepCounts = function (room: Room, creepConfigs: CreepConfig[]) {
   let creepCounts = {} as CreepCounts;
   for (let request of creepConfigs) {
-    creepCounts[request.id] = room.creeps.mine.filter(creep => {
+    const uniqueCreeps: Creep[] = [];
+    [...room.creeps.mine, ...room.remoteCreeps].forEach(creep => {
+      if (!uniqueCreeps.map(c => c.name).includes(creep.name) && !creep.spawning) {
+        uniqueCreeps.push(creep);
+      }
+    });
+    creepCounts[request.id] = uniqueCreeps.filter(creep => {
       return creep.memory.config === request.id;
     }).length;
   }

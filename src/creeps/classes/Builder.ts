@@ -10,7 +10,7 @@ declare global {
   }
 }
 
-const getBuilderCreep = function (this: Creep): Creep {
+const getBuilder = function (this: Creep): Creep {
   const states: BuilderRoleStates = {
     init: {
       code: StateCode.INIT,
@@ -87,9 +87,7 @@ const getBuilderCreep = function (this: Creep): Creep {
     },
     wait: {
       code: StateCode.WAITING,
-      run: () => {
-        this.say("wait wait");
-      },
+      run: () => {},
       transition: () => {
         if (this.room.energyAvailable >= this.room.minAvailableEnergy) {
           this.updateStateCode(StateCode.LOADSELF, "loadself");
@@ -101,4 +99,4 @@ const getBuilderCreep = function (this: Creep): Creep {
   return this;
 };
 
-export default getBuilderCreep;
+export default getBuilder;

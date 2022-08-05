@@ -1,4 +1,4 @@
-import { StateCode } from "../types/States";
+import { StateCode, ContainerType } from "../types/States";
 import getStatefulTower, { TowerStates } from "./classes/Tower";
 import extendSpawn, { getStatefulSpawn, SpawnerStates } from "./classes/Spawn";
 //@ts-ignore
@@ -9,12 +9,20 @@ type StructureStates = BaseStructureStates | SpawnerStates | TowerStates;
 declare global {
   interface StructureMemory {
     state?: StateCode;
+    target?: Id<_HasId>;
   }
 
   interface Structure {
     memory: StructureMemory;
   }
 
+  interface ContainerMemory extends StructureMemory {
+    containerType?: ContainerType;
+  }
+
+  interface StructureContainer {
+    memory: ContainerMemory;
+  }
   interface BaseStructureStates {
     init: StructureState;
   }
@@ -33,34 +41,50 @@ declare global {
   }
 }
 
-const structureMemoryPropDesc: PropertyDescriptor = {
-  get: function (this: Structure) {
-    if (_.isUndefined(Memory.structures)) {
-      Memory.structures = {} as {
-        [structureId: string]: StructureMemory;
-      };
-    }
-    if (!_.isObject(Memory.structures)) {
-      return undefined;
-    }
-    return (Memory.structures[this.id] = Memory.structures[this.id] || {});
-  },
-  set: function (this: Structure, value: StructureMemory) {
-    if (_.isUndefined(Memory.structures)) {
-      Memory.structures = {} as {
-        [structureId: string]: StructureMemory;
-      };
-    }
-    if (!_.isObject(Memory.structures)) {
-      throw new Error("Could not set structure memory:" + this.id);
-    }
-    Memory.structures[this.id] = value;
-  },
-  configurable: true
-};
+// const structureMemoryPropDesc: PropertyDescriptor = {
+//   get: function (this: Structure) {
+//     if (_.isUndefined(Memory.structures)) {
+//       Memory.structures = {} as {
+//         [structureId: string]: StructureMemory;
+//       };
+//     }
+//     if (!_.isObject(Memory.structures)) {
+//       return undefined;
+//     }
+//     return (Memory.structures[this.id] = Memory.structures[this.id] || {});
+//   },
+//   set: function (this: Structure, value: StructureMemory) {
+//     if (_.isUndefined(Memory.structures)) {
+//       Memory.structures = {} as {
+//         [structureId: string]: StructureMemory;
+//       };
+//     }
+//     if (!_.isObject(Memory.structures)) {
+//       throw new Error("Could not set structure memory:" + this.id);
+//     }
+//     Memory.structures[this.id] = value;
+//   },
+//   configurable: true
+// };
 
 const extendStructure = function () {
-  Object.defineProperty(Structure.prototype, "memory", structureMemoryPropDesc);
+  Object.defineProperty(Structure.prototype, "memory", {
+    get: function () {
+      if (!this._memory) {
+        if (!Memory.structures[this.id]) {
+          Memory.structures[this.id] = {};
+          this._memory = {};
+        } else {
+          this._memory = Memory.structures[this.id];
+        }
+      }
+      return this._memory;
+    },
+    set: function (value: StructureMemory) {
+      this._memory = value;
+      Memory.structures[this.id] = value;
+    }
+  });
 
   Object.defineProperty(Structure.prototype, "updateStateCode", {
     value: function (code: StateCode, message?: string) {
@@ -90,6 +114,27 @@ const extendStructure = function () {
     },
     writable: true,
     configurable: true
+  });
+
+  Object.defineProperty(StructureContainer.prototype, "memory", {
+    get: function () {
+      if (!this.room.memory.containers) {
+        this.room.memory.containers = {};
+      }
+      if (!this._memory) {
+        if (!this.room.memory.containers[this.id]) {
+          this.room.memory.containers[this.id] = {};
+          this._memory = {};
+        } else {
+          this._memory = this.room.memory.containers[this.id];
+        }
+      }
+      return this._memory;
+    },
+    set: function (value: StructureMemory) {
+      this._memory = value;
+      this.room.memory.containers[this.id] = value;
+    }
   });
 
   extendSpawn();
