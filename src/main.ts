@@ -26,26 +26,26 @@ declare global {
     interface Global {
       player: string;
       log: any;
+      error: any;
     }
   }
 }
 
 global.player = "leoric-crown";
 global.log = getLog();
-// Extend Room prototype
+global.error = console.log;
 extendRoom();
 extendStructure();
 extendCreep();
 
 const baseLoop = () => {
   global.log(
-    `-----------------------start of game tick ${Game.time}-----------------------`
+    `{green-fg}-----------------------start of game tick ${Game.time}-----------------------`
   );
 
   // Initialize custom structures memory
   // Memory.structures = Memory.structures || ({} as StructureMemory);
   if (_.isUndefined(Memory.structures)) {
-    console.log("RESETTING MEMORY");
     Memory.structures = {};
   }
 
@@ -69,9 +69,13 @@ const baseLoop = () => {
   exportStats();
   watcher();
 
-  global.log(`CPU Used this tick: ${Game.cpu.getUsed()}. Bucket: ${Game.cpu.bucket}`);
   global.log(
-    `------------------------end of game tick ${Game.time}------------------------`
+    `{yellow-fg}CPU{/yellow-fg} Used this tick: ${Game.cpu.getUsed()}. Bucket: ${
+      Game.cpu.bucket
+    }`
+  );
+  global.log(
+    `{red-fg}------------------------end of game tick ${Game.time}------------------------`
   );
 };
 

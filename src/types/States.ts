@@ -2,12 +2,12 @@ export enum StateCode {
   INIT = -1,
   MOVE = 0,
   HARVEST = 1,
-  LOAD = 2,
+  DEPOSIT = 2,
   UPGRADE = 3,
   BUILD = 4,
   LOADSELF = 5,
   ATTACK = 6,
-  HAUL = 7,
+  WITHDRAW = 7,
   LOAD_STRUCTURE = 8,
   REPAIR = 9,
   HEAL = 10,
@@ -41,7 +41,8 @@ export enum CreepType {
 
 export enum ContainerType {
   DEPOSIT = "deposit",
-  SUPPLY = "supply"
+  SUPPLY = "supply",
+  HYBRID = "hybrid"
 }
 
 export enum CreepRole {

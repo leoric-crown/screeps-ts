@@ -61,7 +61,7 @@ const getRemoteHarvester = function (this: Creep): Creep {
         if (home && this.destination) {
           if (this.pos.getRangeTo(this.destination) <= 5) {
             if (this.pos.roomName === home.name) {
-              this.updateStateCode(StateCode.LOAD, "rem load");
+              this.updateStateCode(StateCode.DEPOSIT, "rem load");
             } else if (this.pos.roomName === remoteRoom) {
               this.updateStateCode(StateCode.HARVEST, "rem harv");
             }
@@ -92,8 +92,8 @@ const getRemoteHarvester = function (this: Creep): Creep {
       }
     },
     load: {
-      code: StateCode.LOAD,
-      run: this.loadProc,
+      code: StateCode.DEPOSIT,
+      run: this.depositProc,
       transition: () => {
         if (remoteRoom) {
           if (this.store.energy === 0) {

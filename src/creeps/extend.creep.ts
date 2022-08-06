@@ -10,6 +10,7 @@ import {
 } from ".";
 //@ts-ignore
 import profiler from "../utils/screeps-profiler";
+import { isSource, isCreep, isAnyStoreStructure } from "./classes/SourceHauler";
 
 declare global {
   interface CreepMemory {
@@ -36,6 +37,7 @@ declare global {
     | HaulerRoleStates
     | UpgraderRoleStates
     | RemoteHarvesterStates
+    | RemoteHaulerStates
     | SupplierRoleStates;
 
   type CreepTarget = Creep | ConstructionSite | Structure;
@@ -56,14 +58,35 @@ declare global {
     moveProc: () => void;
     harvestProc: (source?: Source) => void;
     upgradeProc: () => void;
-    loadProc: (filter?: (structure: Structure) => boolean) => void;
+    depositProc: (this: Creep, targets?: (Creep | AnyStoreStructure)[]) => void;
     loadSelfProc: (target?: Structure) => void;
     buildProc: () => void;
-    haulProc: (sources: Creep[]) => void;
+    withdrawProc: (targets: (Creep | AnyStoreStructure)[]) => void;
     supplyProc: (creepRole: CreepRole) => void;
     loadStructureProc: () => void;
   }
 }
+
+const findDepositTargetStructures = (room: Room) => {
+  let targets: AnyStoreStructure[] = [];
+  if (room.energyAvailable < room.minAvailableEnergy) {
+    targets = room.spawns.filter(s => s.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    targets.length === 0 &&
+      (targets = room.extensions.filter(
+        s => s.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+      ));
+  } else if (targets.length === 0 && room.containers.length > 0) {
+    targets = room.containers.filter(
+      x =>
+        x.store.getFreeCapacity() > 0 &&
+        (x.memory.containerType === ContainerType.DEPOSIT ||
+          x.memory.containerType === ContainerType.HYBRID)
+    );
+  } else if (targets.length === 0) {
+    targets = [...room.spawns, ...room.extensions];
+  }
+  return targets;
+};
 
 const creepProcs = {
   moveProc: function (this: Creep) {
@@ -76,7 +99,10 @@ const creepProcs = {
       const tryMoveTo = this.moveTo(new RoomPosition(x, y, roomName), {
         visualizePathStyle: { stroke: "#ffffff" }
       });
-    } else throw new Error(`in moveProc: Creep ${this.name} has no target to move to`);
+    } else
+      throw new Error(
+        `in moveProc: Creep ${this.name} in room ${this.room} [type=${this.type}] has no target to move to`
+      );
   },
   harvestProc: function (this: Creep, source?: Source) {
     if (this.memory.target) {
@@ -90,70 +116,84 @@ const creepProcs = {
           });
         }
       }
-    } else throw new Error(`in harvestProc: Creep ${this.name} has no target source`);
-  },
-  loadProc: function (this: Creep, filter?: (structure: AnyStoreStructure) => boolean) {
-    let target = undefined;
-    if (this.room.energyAvailable < this.room.minAvailableEnergy) {
-      const targetLoadables = filter
-        ? this.room.loadables.filter(filter)
-        : this.room.loadables;
-      target = this.pos.findClosestByPath(targetLoadables) || this.room.spawns[0];
-    } else {
-      const nonFullDeposits = this.room.containers.filter(x => {
-        return (
-          x.store.getFreeCapacity() > 0 &&
-          x.memory.containerType === ContainerType.DEPOSIT
-        );
-      });
-
-      if (nonFullDeposits.length > 0) {
-        const targetDeposits = filter ? nonFullDeposits.filter(filter) : nonFullDeposits;
-        targetDeposits.length > 0 &&
-          (target = this.pos.findClosestByPath(targetDeposits));
-      }
-    }
-
-    if (!target) {
-      const targetLoadables = filter
-        ? this.room.loadables.filter(filter)
-        : this.room.loadables;
-      target = this.pos.findClosestByPath(targetLoadables) || this.room.spawns[0];
-    }
-
-    if (target) {
-      const tryLoad = this.transfer(target as LoadableStructure, RESOURCE_ENERGY);
-      if (tryLoad === ERR_NOT_IN_RANGE) {
-        this.moveTo(target, {
-          visualizePathStyle: { stroke: "#ffffff" }
-        });
-      }
     } else
       throw new Error(
-        `In loadProc: Creep ${this.name} found no suitable target for loading`
+        `in harvestProc: Creep ${this.name} in room ${this.room} [type=${this.type}]has no target source`
       );
   },
-  // rename this to something more descriptive, this procedure loads energy from creeps into creep store
-  haulProc: function (this: Creep, sources: Creep[]) {
-    if (this.memory.target) {
-      const target = Game.getObjectById(this.memory.target);
+  depositProc: function (this: Creep, targets?: (Creep | AnyStoreStructure)[]) {
+    if (!targets) targets = findDepositTargetStructures(this.room);
+
+    if (targets && targets.length > 0) {
+      const target = this.pos.findClosestByPath(targets);
       if (target) {
-        const rangeToTarget = this.pos.getRangeTo(target);
-        if (rangeToTarget > 10) this.moveTo(target);
+        const tryLoad = this.transfer(target, RESOURCE_ENERGY);
+        if (tryLoad === ERR_NOT_IN_RANGE) {
+          this.moveTo(target, {
+            visualizePathStyle: { stroke: "#ffffff" }
+          });
+        }
+      } else
+        throw new Error(
+          `Creep ${this.name} in room ${this.room} [type=${this.type}] could not find suitable deposit target`
+        );
+    } else
+      throw new Error(
+        `Creep ${this.name} in room ${this.room} [type=${this.type}] could not find any deposit candidates`
+      );
+  },
+  withdrawProc: function (this: Creep, targets: (Creep | AnyStoreStructure)[]) {
+    if (this.memory.target) {
+      const anchor = Game.getObjectById(this.memory.target);
+      if (anchor) {
+        const rangeToAnchor = this.pos.getRangeTo(anchor);
+        if (rangeToAnchor > 10) this.moveTo(anchor);
         else {
-          const sorted = sources
-            .filter(creep => creep.id !== this.id && creep.store.energy > 0)
-            .sort((a, b) => {
-              return a.store.energy > b.store.energy ? -1 : 1;
-            });
-          const transferTarget = sorted[0] || undefined;
-          if (transferTarget) {
-            if (this.pos.getRangeTo(transferTarget) > 1) {
-              this.moveTo(transferTarget);
-            } else {
-              transferTarget.transfer(this, RESOURCE_ENERGY);
+          if (isSource(anchor)) {
+            if (!targets) {
+              throw new Error(
+                `Creep ${this.name} in room ${this.room} [type=${this.type}] running haulProc with anchor=(${anchor.id} is Source) was not provided a target`
+              );
             }
+            const withdrawTarget =
+              targets
+                .filter(target => target.id !== this.id && target.store.energy > 0)
+                .sort((a, b) => {
+                  return a.store.energy > b.store.energy ? -1 : 1;
+                })[0] || undefined;
+            if (withdrawTarget) {
+              if (this.pos.getRangeTo(withdrawTarget) > 1) {
+                this.moveTo(withdrawTarget);
+              } else {
+                if (isCreep(withdrawTarget)) {
+                  withdrawTarget.transfer(this, RESOURCE_ENERGY);
+                }
+                // WIP
+                else if (isAnyStoreStructure(withdrawTarget)) {
+                  this.withdraw(withdrawTarget, RESOURCE_ENERGY);
+                }
+              }
+            } else
+              throw new Error(
+                `Creep ${this.name} in room ${this.room} [type=${this.type}] could not find suitable withdraw target (anchor=${anchor.id} is Source)`
+              );
           }
+        }
+      }
+    } else {
+      // general (no target/anchor) hauler behaviour
+      const withdrawTarget =
+        targets
+          .filter(target => target.store.energy > 0)
+          .sort((a, b) => {
+            return a.store.energy > b.store.energy ? -1 : 1;
+          })[0] || undefined;
+      if (withdrawTarget) {
+        if (this.pos.getRangeTo(withdrawTarget) > 1) {
+          this.moveTo(withdrawTarget);
+        } else {
+          if (isAnyStoreStructure(withdrawTarget))
+            this.withdraw(withdrawTarget, RESOURCE_ENERGY);
         }
       }
     }
@@ -194,7 +234,12 @@ const creepProcs = {
   loadSelfProc: function (this: Creep, target?: AnyStoreStructure) {
     if (!target) {
       const targetContainer = this.pos.findClosestByPath(
-        this.room.containers.filter(container => container.store.energy > 0)
+        this.room.containers.filter(
+          container =>
+            container.store.energy > 0 &&
+            (container.memory.containerType === ContainerType.SUPPLY ||
+              container.memory.containerType === ContainerType.HYBRID)
+        )
       );
       targetContainer && (target = targetContainer);
 

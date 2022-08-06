@@ -3,8 +3,8 @@ import { BaseCreepStates, CreepRole, StateCode } from "../../types/States";
 declare global {
   interface RemoteHaulerStates extends BaseCreepStates {
     move: CreepState;
-    haul: CreepState;
-    load: CreepState;
+    withdraw: CreepState;
+    deposit: CreepState;
   }
 }
 
@@ -47,16 +47,16 @@ const getRemoteHauler = function (this: Creep): Creep {
         if (home && this.destination) {
           if (this.pos.getRangeTo(this.destination) <= 5) {
             if (this.pos.roomName === home.name) {
-              this.updateStateCode(StateCode.LOAD, "rem load");
+              this.updateStateCode(StateCode.DEPOSIT, "rem load");
             } else if (this.pos.roomName === remoteRoom) {
-              this.updateStateCode(StateCode.HAUL, "rem haul");
+              this.updateStateCode(StateCode.WITHDRAW, "rem haul");
             }
           }
         }
       }
     },
-    haul: {
-      code: StateCode.HAUL,
+    withdraw: {
+      code: StateCode.WITHDRAW,
       run: () => {
         if (home) {
           const remoteHarvesters = home.remoteCreeps.filter(creep => {
@@ -65,7 +65,7 @@ const getRemoteHauler = function (this: Creep): Creep {
               creep.role === CreepRole.REMOTE_HARVESTER
             );
           });
-          this.haulProc(remoteHarvesters);
+          this.withdrawProc(remoteHarvesters);
           const targetSource = getTargetSource();
           if (targetSource && this.pos.getRangeTo(targetSource) === 1) {
             const direction = this.pos.getDirectionTo(targetSource) as number;
@@ -84,9 +84,9 @@ const getRemoteHauler = function (this: Creep): Creep {
         }
       }
     },
-    load: {
-      code: StateCode.LOAD,
-      run: this.loadProc,
+    deposit: {
+      code: StateCode.DEPOSIT,
+      run: this.depositProc,
       transition: () => {
         if (remoteRoom) {
           if (this.store.energy === 0) {

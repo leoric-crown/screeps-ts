@@ -8,7 +8,7 @@ type DamagedStructures = {
 };
 
 declare global {
-  type LoadableStructure = StructureSpawn | StructureExtension;
+  // type LoadableStructure = StructureSpawn | StructureExtension;
   // | StructureContainer
   // | StructureStorage;
 
@@ -45,7 +45,7 @@ declare global {
 
     buildables: ConstructionSite[];
     // structures
-    loadables: LoadableStructure[];
+    // loadables: LoadableStructure[];
     extensions: StructureExtension[];
     containers: StructureContainer[];
     managedStructures: ManagedStructure[];
@@ -202,19 +202,19 @@ const extendRoom = function () {
     configurable: true
   });
 
-  Object.defineProperty(Room.prototype, "loadables", {
-    get: function () {
-      if (!this._loadables) {
-        this._loadables = this._getStructureLists(this.structures).loadables;
-      }
-      return this._loadables as LoadableStructure[];
-    },
-    set: function (value: LoadableStructure[]) {
-      this._loadables = value;
-    },
-    enumerable: true,
-    configurable: true
-  });
+  // Object.defineProperty(Room.prototype, "loadables", {
+  //   get: function () {
+  //     if (!this._loadables) {
+  //       this._loadables = this._getStructureLists(this.structures).loadables;
+  //     }
+  //     return this._loadables as LoadableStructure[];
+  //   },
+  //   set: function (value: LoadableStructure[]) {
+  //     this._loadables = value;
+  //   },
+  //   enumerable: true,
+  //   configurable: true
+  // });
 
   Object.defineProperty(Room.prototype, "extensions", {
     get: function () {

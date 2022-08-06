@@ -58,10 +58,10 @@ let _getStatefulRoom = (room: Room) => {
 
   let _run = function (this: StatefulRoom) {
     global.log(
-      `Room: [room ${this.name}] - numStructuresToFill=${this.structuresToFill.length}, energyInStorage: ${this.energyInStorage}, energyAvailable: ${this.energyAvailable} / ${this.energyCapacityAvailable}, minAvailableEnergy: ${this.memory.minAvailableEnergy}`
+      `Room: [room ${this.name}] - energyAvailable: ${this.energyAvailable} / ${this.energyCapacityAvailable}, energyInStorage: ${this.energyInStorage}, minAvailableEnergy: ${this.memory.minAvailableEnergy}`
     );
     global.log(
-      `Room: [room ${this.name}] - numManagedStructures=${this.managedStructures.length}, numExtensions=${this.extensions.length}, numLoadables=${this.loadables.length}, damagedStructures=${this.damagedStructures.total}`
+      `Room: [room ${this.name}] - numManagedStructures=${this.managedStructures.length}, numExtensions=${this.extensions.length}, damagedStructures=${this.damagedStructures.total}`
     );
     this.structureManager.run();
     this.creepManager.run();

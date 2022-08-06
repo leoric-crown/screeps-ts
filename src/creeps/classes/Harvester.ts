@@ -52,7 +52,7 @@ const getHarvester = function (this: Creep): Creep {
 
             const haulersAvailable = sourceHaulers.length > 0; // store this in CreepManager and add property to creep
             if (!haulersAvailable) {
-              this.updateStateCode(StateCode.LOAD, "load");
+              this.updateStateCode(StateCode.DEPOSIT, "load");
             } else {
               this.updateStateCode(StateCode.WAITING, "wait full");
             }
@@ -70,8 +70,8 @@ const getHarvester = function (this: Creep): Creep {
       }
     },
     load: {
-      code: StateCode.LOAD,
-      run: this.loadProc,
+      code: StateCode.DEPOSIT,
+      run: this.depositProc,
       transition: () => {
         if (targetSource) {
           if (this.store.energy === 0) {

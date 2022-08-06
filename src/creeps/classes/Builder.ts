@@ -45,23 +45,20 @@ const getBuilder = function (this: Creep): Creep {
       transition: () => {
         if (this.store.energy === 0) {
           if (this.room.buildables.length === 0) {
-            this.updateStateCode(StateCode.LOAD, "load");
+            this.updateStateCode(StateCode.DEPOSIT, "load");
           } else if (this.room.energyAvailable < this.room.minAvailableEnergy) {
             this.updateStateCode(StateCode.WAITING, "bld wait");
           } else {
             this.updateStateCode(StateCode.LOADSELF, "loadSelf");
           }
         } else if (this.room.buildables.length === 0) {
-          this.updateStateCode(StateCode.LOAD, "load");
+          this.updateStateCode(StateCode.DEPOSIT, "load");
         }
       }
     },
     load: {
-      code: StateCode.LOAD,
-      run: () =>
-        this.loadProc(
-          (structure: Structure) => structure.structureType === STRUCTURE_EXTENSION
-        ),
+      code: StateCode.DEPOSIT,
+      run: () => this.depositProc,
       transition: () => {
         if (this.store.energy === 0) {
           if (this.room.buildables.length > 0) {

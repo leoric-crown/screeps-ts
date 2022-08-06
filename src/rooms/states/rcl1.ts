@@ -5,7 +5,7 @@ import makeCreepConfigs, {
 import { RoomState } from "../StatefulRoom";
 import { CreepType, CreepRole } from "../../types/States";
 
-const harvConfig = {
+const harvestersConfig = {
   creepType: CreepType.HARVESTER,
   role: CreepRole.HARVESTER,
   body: [WORK, WORK, CARRY, MOVE],
@@ -17,7 +17,7 @@ const harvConfig = {
 const sourceHaulersConfig = {
   creepType: CreepType.HAULER,
   role: CreepRole.HAULER,
-  desired: 2,
+  desired: 1,
   body: [CARRY, MOVE],
   scaleBody: [CARRY, MOVE]
 };
@@ -26,26 +26,26 @@ const upgradersConfig = {
   name: "upgr",
   creepType: CreepType.UPGRADER,
   role: CreepRole.UPGRADER,
-  desired: 4,
+  desired: 6,
   body: [WORK, CARRY, MOVE],
   scaleBody: [WORK, CARRY, MOVE]
 };
 
-const upgradeSupplierConfig = {
+const upgradeSuppliersConfig = {
   name: "supp",
   creepType: CreepType.SUPPLIER,
   role: CreepRole.SUPPLIER,
-  desired: 2,
+  desired: 0,
   body: [CARRY, CARRY, MOVE, MOVE],
   scaleBody: [CARRY, MOVE]
 };
 
 // only add these when reached RCL 2
-const buildConfig = {
+const buildersConfig = {
   name: "build",
   creepType: CreepType.BUILDER,
   role: CreepRole.BUILDER,
-  desired: 0,
+  desired: 2,
   body: [WORK, CARRY, MOVE],
   scaleBody: [WORK, CARRY, MOVE],
   scaleLimit: 3
@@ -54,19 +54,27 @@ const buildConfig = {
 const remoteHarvestersConfig = {
   creepType: CreepType.REMOTE_HARVESTER,
   role: CreepRole.REMOTE_HARVESTER,
-  desired: 0,
+  desired: 3,
   body: [WORK, WORK, CARRY, MOVE, MOVE],
   scaleBody: [WORK, CARRY, MOVE],
   scaleLimit: 1
 };
 
-const remoteHaulerConfig = {
+const remoteHaulersConfig = {
   creepType: CreepType.REMOTE_HAULER,
   role: CreepRole.REMOTE_HAULER,
-  desired: 0,
+  desired: 4,
   body: [CARRY, CARRY, MOVE, MOVE],
   scaleBody: [CARRY, MOVE],
   scaleLimit: 3
+};
+
+const regularHaulersConfigs = {
+  creepType: CreepType.HAULER,
+  role: CreepRole.HAULER,
+  desired: 5,
+  body: [CARRY, MOVE],
+  scaleBody: [CARRY, MOVE]
 };
 
 class Rcl1State implements RoomState {
@@ -82,7 +90,7 @@ class Rcl1State implements RoomState {
     let sourceCount = 0;
     for (const source of sourcesByRangeToSpawn) {
       const sourceHarvesters = {
-        ...harvConfig,
+        ...harvestersConfig,
         id: configIndex,
         target: source.id,
         name: "harv" + sourceCount
@@ -106,21 +114,21 @@ class Rcl1State implements RoomState {
     configIndex++;
 
     configData.push({
-      ...upgradeSupplierConfig,
+      ...upgradeSuppliersConfig,
       id: configIndex,
       target: room.controller?.id
     });
     configIndex++;
 
     if (room.rcl >= 2) {
-      configData.push({ ...buildConfig, id: configIndex });
+      configData.push({ ...buildersConfig, id: configIndex });
       configIndex++;
 
       const remotes: RemoteSource[] = [
         {
           remoteRoom: "W8N2",
           sourceId: "a06f077240e9885" as Id<Source>,
-          pos: { x: 4, y: 12 }
+          pos: { x: 4, y: 12 },
         },
         {
           remoteRoom: "W7N2",
@@ -150,7 +158,7 @@ class Rcl1State implements RoomState {
         configIndex++;
 
         configData.push({
-          ...remoteHaulerConfig,
+          ...remoteHaulersConfig,
           id: configIndex,
           name: "remHaul" + remoteCount,
           home: room.name,
@@ -161,9 +169,13 @@ class Rcl1State implements RoomState {
 
         remoteCount++;
       });
-    }
 
-    // const configData: CreepConfigData[] = [...harvesterConfigs, ...haulerConfigs];
+      configData.push({
+        ...regularHaulersConfigs,
+        id: configIndex,
+        name: "haul"
+      })
+    }
 
     this.creepConfigs = makeCreepConfigs(configData);
   }

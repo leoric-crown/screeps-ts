@@ -68,8 +68,12 @@ class CreepManager {
         const creep = this.creeps[creepName];
         setMemory(creep);
         const { stateName, state } = creep.getState();
-        state?.run();
-        state?.transition();
+        try {
+          state?.run();
+          state?.transition();
+        } catch (err) {
+          global.error(`{red-fg}${err}`);
+        }
       }
     };
     if (profiler) _runCreeps = profiler.registerFN(_runCreeps, "CreepManager.runCreeps");

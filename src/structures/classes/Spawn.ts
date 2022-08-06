@@ -100,10 +100,11 @@ const extendSpawn = function () {
 
         const creepCountsWithName: { [name: string]: any } = {};
         for (let [id, count] of Object.entries(this.creepCounts as CreepCounts)) {
-          const name = this.creepConfigs.find(
+          const request = this.creepConfigs.find(
             (config: CreepConfig) => config.id.toString() === id
-          ).name;
-          creepCountsWithName[name] = count;
+          );
+          const { name, desired } = request;
+          creepCountsWithName[name] = `${count}/${desired}`;
         }
 
         global.log(`Spawn: ${this.room} - In state: ${StateDictionary[stateCode]}`);
@@ -153,6 +154,7 @@ export const spawnerStates = function (this: StatefulSpawn) {
               )}`
             );
           } else {
+            global.log(`Spawn idle`);
           }
         }
       },
@@ -193,7 +195,8 @@ export const spawnerStates = function (this: StatefulSpawn) {
           } else {
             needSpawn = true;
             saveResources = true;
-            logMessage += `Need to spawn creep now`;
+            const configName = this.nextCreep.request.name;
+            logMessage += `Need to spawn ${configName} creep now`;
           }
 
           const requestCost = request.getRequestCost(maxCost);

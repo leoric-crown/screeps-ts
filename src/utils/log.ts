@@ -26,7 +26,7 @@ let getLog = () => {
       log.apply(console, args as []);
     }
   };
-  myLog = profiler ? profiler.registerFN(myLog, "myLog") : myLog
+  myLog = profiler ? profiler.registerFN(myLog, "myLog") : myLog;
   return myLog;
 };
 
